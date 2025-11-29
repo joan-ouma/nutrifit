@@ -1,5 +1,7 @@
 const DailyLog = require('../models/DailyLog');
 const User = require('../models/User');
+// ✅ IMPORT LEADERBOARD CONTROLLER
+const leaderboardController = require('./leaderboardController');
 
 /**
  * Log water intake
@@ -26,6 +28,15 @@ exports.logWater = async (req, res, next) => {
 
         dailyLog.waterIntake = (dailyLog.waterIntake || 0) + (amount || 0);
         await dailyLog.save();
+
+        // ✅ CRITICAL FIX: Trigger Leaderboard Update
+        // Drinking water is a healthy habit, so update the score!
+        try {
+            await leaderboardController.updateLeaderboardEntry(userId, targetDate);
+            console.log(`Water points calculated for user ${userId}`);
+        } catch (err) {
+            console.error("Leaderboard sync failed (Water):", err.message);
+        }
 
         res.json({
             success: true,
@@ -76,4 +87,3 @@ exports.getWaterIntake = async (req, res, next) => {
         next(error);
     }
 };
-

@@ -10,8 +10,21 @@ dotenv.config();
 const app = express();
 
 // CORS configuration - Allow Authorization header
+const corsOrigins = process.env.CORS_ORIGIN 
+    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+    : ['http://localhost:3000'];
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN?.split(',') || 'http://localhost:3000',
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        if (corsOrigins.includes(origin) || corsOrigins.includes('*')) {
+            callback(null, true);
+        } else {
+            console.warn(`CORS blocked origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -73,10 +86,12 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/nutrifit')
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🌐 CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
+    console.log(`🔑 GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? '✅ Set' : '❌ Missing'}`);
+    console.log(`🗄️  MONGO_URI: ${process.env.MONGO_URI ? '✅ Set' : '❌ Using default'}`);
 });
 
 module.exports = app;
