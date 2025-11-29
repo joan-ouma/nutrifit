@@ -1,162 +1,127 @@
 import React, { useState } from 'react';
-import { DollarSign, Clock, Flame, Plus } from 'lucide-react';
+import { DollarSign, Clock, Flame, Plus, Check } from 'lucide-react';
 import NutritionBar from './NutritionBar';
 import { logMeal } from '../api';
 
 export default function RecipeCard({ recipe, onMealAdded }) {
     const [isAdding, setIsAdding] = useState(false);
 
+    // --- HELPER: Extracts a clean number from text ---
+    const cleanNumber = (val) => {
+        if (typeof val === 'number') return val;
+        if (!val) return 0;
+        const match = val.toString().match(/(\d+(\.\d+)?)/);
+        return match ? parseFloat(match[0]) : 0;
+    };
+
     const handleQuickAdd = async (mealType) => {
         setIsAdding(true);
         try {
-            const nutrition = recipe.nutrition || {};
-            
-            // HELPER: Extract numbers safely from strings like "approx 20g" or "20"
-            const parseNum = (val) => {
-                if (typeof val === 'number') return val;
-                if (!val) return 0;
-                // Regex matches the first number found in the string
-                const match = val.toString().match(/(\d+(\.\d+)?)/); 
-                return match ? parseFloat(match[0]) : 0;
-            };
+            // 1. FIX: Convert AI strings ["Rice"] to Backend Objects [{name: "Rice"}]
+            const formattedIngredients = (recipe.ingredients || []).map(ing => ({
+                name: ing,
+                amount: "1 serving", // Default since AI doesn't specify amounts per line
+                calories: 0
+            }));
 
-            await logMeal({
-                name: recipe.name,
-                type: mealType,
+            // 2. Prepare the payload
+            const payload = {
+                name: recipe.name || "Unknown Recipe",
+                type: mealType, // 'breakfast', 'lunch', 'dinner'
                 date: new Date().toISOString().split('T')[0],
                 nutrition: {
-                    calories: parseNum(nutrition.calories),
-                    protein: parseNum(nutrition.protein),
-                    carbs: parseNum(nutrition.carbs),
-                    fats: parseNum(nutrition.fats)
+                    calories: cleanNumber(recipe.nutrition?.calories),
+                    protein: cleanNumber(recipe.nutrition?.protein),
+                    carbs: cleanNumber(recipe.nutrition?.carbs),
+                    fats: cleanNumber(recipe.nutrition?.fats)
                 },
-                ingredients: recipe.ingredients || [],
+                ingredients: formattedIngredients, // <--- THE FIX IS HERE
                 servingSize: recipe.servingSize || '1 serving',
                 notes: `Added from AI Chef: ${recipe.name}`
-            });
+            };
+
+            console.log("SENDING MEAL:", payload); // Debug log
+
+            // 3. Send to backend
+            await logMeal(payload);
             
             if (onMealAdded) onMealAdded();
-            alert('Meal added successfully!');
+            alert(`Successfully added to ${mealType}!`);
+
         } catch (error) {
-            console.error("Add meal error:", error); // Check console for real error
-            alert('Failed to add meal. Check console for details.');
+            console.error("ADD MEAL ERROR:", error.response?.data || error);
+            alert(`Failed to add meal: ${error.response?.data?.message || "Check console"}`);
         } finally {
             setIsAdding(false);
         }
     };
+
     return (
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden flex flex-col h-full animate-fadeIn hover:shadow-xl transition-shadow">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden flex flex-col h-full hover:shadow-xl transition-shadow animate-fadeIn">
             {/* Card Header */}
             <div className="bg-slate-900 text-white p-5">
                 <div className="flex justify-between items-start mb-2">
                     <h3 className="text-xl font-bold leading-tight">{recipe.name}</h3>
-                    <div className="bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm whitespace-nowrap ml-2">
-                        {recipe.matchScore ? `${recipe.matchScore}% Match` : 'Recommended'}
-                    </div>
+                    {recipe.matchScore && (
+                        <span className="bg-emerald-500 text-xs font-bold px-2 py-1 rounded">
+                            {recipe.matchScore}% Match
+                        </span>
+                    )}
                 </div>
-
                 <div className="flex gap-4 text-slate-300 text-xs font-medium">
                     <span className="flex items-center gap-1"><Clock size={14} /> {recipe.time}</span>
                     <span className="flex items-center gap-1"><DollarSign size={14} /> {recipe.costPerServing}/serving</span>
-                    <span className="flex items-center gap-1"><Flame size={14} /> {recipe.nutrition?.calories} kcal</span>
+                    <span className="flex items-center gap-1"><Flame size={14} /> {cleanNumber(recipe.nutrition?.calories)} kcal</span>
                 </div>
             </div>
 
             {/* Card Body */}
             <div className="p-6 flex-1 flex flex-col gap-6">
-
-                {/* 1. AI Insight (Why this works for you) */}
+                
+                {/* AI Insight */}
                 {recipe.whyItWorks && (
-                    <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
-                        <p className="text-sm text-slate-700 italic">
-                            " {recipe.whyItWorks} "
-                        </p>
+                    <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 text-sm text-slate-700 italic">
+                        "{recipe.whyItWorks}"
                     </div>
                 )}
 
-                {/* 2. Nutrition Section */}
-                <div>
-                    <h4 className="text-xs uppercase text-slate-400 font-bold mb-3 tracking-wider flex items-center gap-2">
-                        Nutrition Profile
-                    </h4>
-                    {recipe.nutrition && (
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <NutritionBar label="Protein" value={recipe.nutrition.protein} max={50} color="bg-blue-500" />
-                                <NutritionBar label="Fats" value={recipe.nutrition.fats} max={30} color="bg-yellow-500" />
-                            </div>
-                            <div>
-                                <NutritionBar label="Carbs" value={recipe.nutrition.carbs} max={60} color="bg-emerald-500" />
-                            </div>
-                        </div>
-                    )}
+                {/* Nutrition Bars */}
+                <div className="grid grid-cols-2 gap-4">
+                    <NutritionBar label="Protein" value={cleanNumber(recipe.nutrition?.protein)} max={50} color="bg-blue-500" />
+                    <NutritionBar label="Carbs" value={cleanNumber(recipe.nutrition?.carbs)} max={60} color="bg-emerald-500" />
                 </div>
 
-                {/* 3. Missing Ingredients Warning */}
-                {recipe.missingIngredients && recipe.missingIngredients.length > 0 && (
-                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
-                        <span className="text-xs font-bold text-amber-800 block mb-2 uppercase tracking-wide">You need to buy:</span>
-                        <div className="flex flex-wrap gap-2">
-                            {recipe.missingIngredients.map((ing, idx) => (
-                                <span key={idx} className="text-xs bg-white px-2 py-1 rounded border border-amber-200 text-amber-800 font-medium shadow-sm">
-                  + {ing}
-                </span>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Quick Add to Meals */}
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => handleQuickAdd('breakfast')}
-                        disabled={isAdding}
-                        className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl hover:bg-emerald-700 transition-colors font-medium text-sm disabled:opacity-50"
-                    >
-                        <Plus size={16} />
-                        {isAdding ? 'Adding...' : 'Add to Breakfast'}
-                    </button>
-                    <button
-                        onClick={() => handleQuickAdd('lunch')}
-                        disabled={isAdding}
-                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm disabled:opacity-50"
-                    >
-                        <Plus size={16} />
-                        {isAdding ? 'Adding...' : 'Add to Lunch'}
-                    </button>
-                    <button
-                        onClick={() => handleQuickAdd('dinner')}
-                        disabled={isAdding}
-                        className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-colors font-medium text-sm disabled:opacity-50"
-                    >
-                        <Plus size={16} />
-                        {isAdding ? 'Adding...' : 'Add to Dinner'}
-                    </button>
-                </div>
-
-                <hr className="border-slate-100" />
-
-                {/* 4. Step-by-Step Instructions */}
+                {/* Preparation Steps */}
                 <div className="flex-1">
-                    <h4 className="text-xs uppercase text-slate-400 font-bold mb-4 tracking-wider flex items-center gap-2">
-                        Preparation Steps
-                    </h4>
+                    <h4 className="text-xs uppercase text-slate-400 font-bold mb-3 tracking-wider">Instructions</h4>
                     {recipe.instructions && recipe.instructions.length > 0 ? (
-                        <ol className="space-y-4">
+                        <ol className="space-y-3">
                             {recipe.instructions.map((step, idx) => (
                                 <li key={idx} className="text-sm text-slate-700 flex gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
-                    {idx + 1}
-                  </span>
-                                    <span className="leading-relaxed">{step}</span>
+                                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">{idx + 1}</span>
+                                    <span className="leading-snug">{step}</span>
                                 </li>
                             ))}
                         </ol>
                     ) : (
-                        <p className="text-sm text-slate-400 italic">Instructions not available.</p>
+                        <p className="text-sm text-slate-400">No instructions available.</p>
                     )}
                 </div>
 
+                {/* ADD BUTTONS (Fixed Layout) */}
+                <div className="grid grid-cols-3 gap-2 mt-auto pt-4 border-t border-slate-100">
+                    {['breakfast', 'lunch', 'dinner'].map((type) => (
+                        <button
+                            key={type}
+                            onClick={() => handleQuickAdd(type)}
+                            disabled={isAdding}
+                            className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all text-xs font-bold uppercase text-slate-600 active:scale-95"
+                        >
+                            {isAdding ? <Clock size={18} className="animate-spin text-emerald-600" /> : <Plus size={18} className="text-emerald-600" />}
+                            <span className="capitalize">{type}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );

@@ -1,223 +1,163 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Trophy, Medal, Award, TrendingUp, Calendar, Target } from 'lucide-react';
-import { getDailyLeaderboard, getWeeklyLeaderboard, getUserRank } from '../api';
+import React, { useState, useEffect } from 'react';
+import { Trophy, Medal, Flame, Activity, Users } from 'lucide-react'; // Added Users icon
+import { getUserRank, getDailyLeaderboard } from '../api';
 
 export default function Leaderboard() {
-    const [leaderboard, setLeaderboard] = useState([]);
-    const [userRank, setUserRank] = useState(null);
-    const [period, setPeriod] = useState('daily'); // 'daily' or 'weekly'
+    const [myStats, setMyStats] = useState({ rank: '-', score: 0, mealsLogged: 0, streak: 0 });
+    const [leaders, setLeaders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const loadLeaderboard = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = period === 'daily' 
-                ? await getDailyLeaderboard()
-                : await getWeeklyLeaderboard();
-            
-            if (response.success) {
-                setLeaderboard(response.leaderboard || []);
-            }
-        } catch (error) {
-            console.error('Failed to load leaderboard:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [period]);
-
-    const loadUserRank = useCallback(async () => {
-        try {
-            const response = await getUserRank();
-            if (response.success) {
-                setUserRank(response);
-            }
-        } catch (error) {
-            console.error('Failed to load user rank:', error);
-        }
-    }, []);
+    // --- HELPER: MASK USERNAME ---
+    // Turns "joanouma48" into "joa***"
+    const maskName = (name) => {
+        if (!name) return "User";
+        if (name.length <= 3) return name;
+        return name.substring(0, 3) + "***";
+    };
 
     useEffect(() => {
-        loadLeaderboard();
-        loadUserRank();
-    }, [loadLeaderboard, loadUserRank]);
+        const fetchData = async () => {
+            try {
+                // 1. Get My Rank
+                const myRankRes = await getUserRank();
+                if (myRankRes) {
+                    setMyStats(prev => ({ ...prev, ...myRankRes }));
+                }
 
-    const getRankIcon = (rank) => {
-        if (rank === 1) return <Trophy className="text-yellow-500" size={24} />;
-        if (rank === 2) return <Medal className="text-gray-400" size={24} />;
-        if (rank === 3) return <Award className="text-orange-600" size={24} />;
-        return <span className="text-slate-400 font-bold">#{rank}</span>;
+                // 2. Get Top Players
+                const dailyRes = await getDailyLeaderboard();
+                if (dailyRes && dailyRes.success && Array.isArray(dailyRes.data)) {
+                    setLeaders(dailyRes.data);
+                } else {
+                    setLeaders([]); 
+                }
+            } catch (err) {
+                console.error("Leaderboard Error:", err);
+                setLeaders([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const getMedalColor = (idx) => {
+        if (idx === 0) return "text-yellow-500"; // Gold
+        if (idx === 1) return "text-slate-400";  // Silver
+        if (idx === 2) return "text-orange-500"; // Bronze
+        return "text-slate-300";
     };
 
     return (
-        <div className="space-y-6 animate-fadeIn">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-xl">
-                <div className="flex items-center justify-between mb-6">
+        <div className="max-w-4xl mx-auto animate-fadeIn pb-10">
+            
+            {/* --- HEADER --- */}
+            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">
+                <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-4">
                     <div>
-                        <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                            <Trophy size={32} />
-                            Leaderboard
+                        <h2 className="text-3xl font-bold mb-1 flex items-center gap-3">
+                            <Trophy className="text-yellow-300 fill-yellow-300" /> Leaderboard
                         </h2>
-                        <p className="text-purple-100">
-                            Compete with others and track your progress
+                        <p className="text-violet-200">
+                            Compete with {leaders.length > 0 ? leaders.length : 'other'} users today.
                         </p>
                     </div>
-                    {userRank && userRank.rank && (
-                        <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 text-center">
-                            <div className="text-sm text-purple-100 mb-1">Your Rank</div>
-                            <div className="text-4xl font-bold">#{userRank.rank}</div>
-                            <div className="text-sm text-purple-100 mt-1">{userRank.score} pts</div>
-                        </div>
-                    )}
+                    
+                    {/* Privacy Badge */}
+                    <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-white/20">
+                        <Users size={14} /> Community Active
+                    </div>
+                </div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            </div>
+
+            {/* --- MY STATS CARD --- */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8 transform hover:scale-[1.01] transition-transform">
+                <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-50">
+                    <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xl">
+                        {(myStats.data?.username || "Me").charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-900 text-lg">My Performance</h3>
+                        <p className="text-sm text-slate-500">
+                            You are currently ranked <span className="text-indigo-600 font-bold">#{myStats.rank}</span>
+                        </p>
+                    </div>
                 </div>
 
-                {/* Period Toggle */}
-                <div className="flex gap-2 bg-white/10 backdrop-blur-md rounded-xl p-1">
-                    <button
-                        onClick={() => setPeriod('daily')}
-                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-                            period === 'daily'
-                                ? 'bg-white text-purple-600 shadow-lg'
-                                : 'text-white hover:bg-white/10'
-                        }`}
-                    >
-                        <Calendar size={18} className="inline mr-2" />
-                        Daily
-                    </button>
-                    <button
-                        onClick={() => setPeriod('weekly')}
-                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-                            period === 'weekly'
-                                ? 'bg-white text-purple-600 shadow-lg'
-                                : 'text-white hover:bg-white/10'
-                        }`}
-                    >
-                        <TrendingUp size={18} className="inline mr-2" />
-                        Weekly
-                    </button>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <div className="text-3xl font-black text-indigo-600">{myStats.score || myStats.points || 0}</div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Points</p>
+                    </div>
+                    <div className="border-l border-slate-100">
+                        <div className="text-3xl font-bold text-slate-800">{myStats.mealsLogged || 0}</div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Meals</p>
+                    </div>
+                    <div className="border-l border-slate-100">
+                        <div className="text-3xl font-bold text-orange-500 flex items-center justify-center gap-1">
+                            {myStats.streak || 0} <Flame size={20} fill="currentColor" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Streak</p>
+                    </div>
                 </div>
             </div>
 
-            {/* Leaderboard */}
-            {loading ? (
-                <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-sm">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                    <p className="text-slate-500">Loading leaderboard...</p>
+            {/* --- LEADERBOARD LIST --- */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                    <h3 className="font-bold text-slate-800 text-lg">Top Performers Today</h3>
+                    <span className="text-xs font-bold text-slate-400 uppercase">Points</span>
                 </div>
-            ) : leaderboard.length === 0 ? (
-                <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-sm">
-                    <Trophy size={48} className="mx-auto mb-4 text-slate-300" />
-                    <p className="text-slate-500 mb-2">No entries yet</p>
-                    <p className="text-sm text-slate-400">Start logging meals to appear on the leaderboard!</p>
-                </div>
-            ) : (
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                    {/* Top 3 Podium */}
-                    {leaderboard.length >= 3 && (
-                        <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 border-b border-slate-200">
-                            <div className="flex items-end justify-center gap-4 max-w-2xl mx-auto">
-                                {/* 2nd Place */}
-                                <div className="flex-1 text-center">
-                                    <div className="bg-gradient-to-r from-gray-300 to-gray-400 rounded-t-2xl p-4 mb-2 shadow-lg">
-                                        <Medal size={32} className="mx-auto mb-2 text-white" />
-                                        <div className="text-white font-bold text-lg mb-1">
-                                            {leaderboard[1]?.maskedUsername || '---'}
-                                        </div>
-                                        <div className="text-white text-sm">{leaderboard[1]?.score || 0} pts</div>
-                                    </div>
-                                    <div className="text-xs text-slate-600 font-medium">2nd Place</div>
+                
+                {loading ? (
+                    <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-3">
+                        <Activity className="animate-spin text-slate-300" size={32} />
+                        <p>Loading rankings...</p>
+                    </div>
+                ) : (!leaders || leaders.length === 0) ? (
+                    <div className="p-12 text-center text-slate-400">
+                        The race is on! Log a meal to take the lead.
+                    </div>
+                ) : (
+                    <div className="divide-y divide-slate-50">
+                        {leaders.map((player, idx) => (
+                            <div key={idx} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors group">
+                                {/* Rank Medal/Number */}
+                                <div className="w-8 text-center font-bold text-lg flex justify-center">
+                                    {idx < 3 ? <Medal className={getMedalColor(idx)} size={24} /> : <span className="text-slate-400">#{idx + 1}</span>}
                                 </div>
 
-                                {/* 1st Place */}
-                                <div className="flex-1 text-center">
-                                    <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-t-2xl p-6 mb-2 shadow-xl transform scale-110">
-                                        <Trophy size={40} className="mx-auto mb-2 text-white" />
-                                        <div className="text-white font-bold text-xl mb-1">
-                                            {leaderboard[0]?.maskedUsername || '---'}
-                                        </div>
-                                        <div className="text-white text-sm font-medium">{leaderboard[0]?.score || 0} pts</div>
-                                    </div>
-                                    <div className="text-xs text-slate-600 font-medium">🏆 Champion</div>
+                                {/* Avatar */}
+                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold border border-slate-200 group-hover:border-indigo-200 group-hover:bg-indigo-50 transition-colors">
+                                    {player.username ? player.username.charAt(0).toUpperCase() : '?'}
                                 </div>
 
-                                {/* 3rd Place */}
-                                <div className="flex-1 text-center">
-                                    <div className="bg-gradient-to-r from-orange-400 to-orange-600 rounded-t-2xl p-4 mb-2 shadow-lg">
-                                        <Award size={32} className="mx-auto mb-2 text-white" />
-                                        <div className="text-white font-bold text-lg mb-1">
-                                            {leaderboard[2]?.maskedUsername || '---'}
-                                        </div>
-                                        <div className="text-white text-sm">{leaderboard[2]?.score || 0} pts</div>
+                                {/* User Details (MASKED) */}
+                                <div className="flex-1">
+                                    <div className="font-bold text-slate-800 flex items-center gap-2">
+                                        {/* ✅ PRIVACY FIX: Mask the username */}
+                                        {maskName(player.username)}
+                                        
+                                        {/* Identify "You" */}
+                                        {player.username === myStats.data?.username && (
+                                            <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">You</span>
+                                        )}
                                     </div>
-                                    <div className="text-xs text-slate-600 font-medium">3rd Place</div>
+                                    <div className="text-xs text-slate-400 font-medium">
+                                        {player.mealsLogged} meals • {player.streak} day streak
+                                    </div>
+                                </div>
+
+                                {/* Score */}
+                                <div className="text-right">
+                                    <div className="font-bold text-indigo-600 text-lg">{player.score || player.points || 0}</div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-
-                    {/* Full Leaderboard List */}
-                    <div className="divide-y divide-slate-100">
-                        {leaderboard.map((entry, index) => {
-                            const rank = entry.rank || index + 1;
-                            const isTopThree = rank <= 3;
-
-                            return (
-                                <div
-                                    key={entry._id || index}
-                                    className={`p-4 hover:bg-slate-50 transition-colors ${
-                                        isTopThree ? 'bg-gradient-to-r from-purple-50/50 to-pink-50/50' : ''
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        {/* Rank */}
-                                        <div className="w-12 flex justify-center">
-                                            {getRankIcon(rank)}
-                                        </div>
-
-                                        {/* User Info */}
-                                        <div className="flex-1">
-                                            <div className="font-bold text-slate-900 mb-1">
-                                                {entry.maskedUsername}
-                                            </div>
-                                            <div className="flex items-center gap-4 text-sm text-slate-600">
-                                                {entry.metrics?.perfectDay && (
-                                                    <span className="flex items-center gap-1 text-emerald-600">
-                                                        <Target size={14} />
-                                                        Perfect Day
-                                                    </span>
-                                                )}
-                                                {entry.streak > 1 && (
-                                                    <span className="flex items-center gap-1 text-orange-600">
-                                                        <TrendingUp size={14} />
-                                                        {entry.streak} day streak
-                                                    </span>
-                                                )}
-                                                <span>{entry.mealsLogged || 0} meals</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Score */}
-                                        <div className="text-right">
-                                            <div className="text-2xl font-bold text-slate-900">
-                                                {entry.score || 0}
-                                            </div>
-                                            <div className="text-xs text-slate-500">points</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        ))}
                     </div>
-
-                    {/* Info Footer */}
-                    <div className="bg-slate-50 p-4 border-t border-slate-200">
-                        <div className="text-xs text-slate-500 text-center">
-                            💡 Points are calculated based on meeting calorie goals, macro balance, meal logging, and streaks
-                        </div>
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }
-

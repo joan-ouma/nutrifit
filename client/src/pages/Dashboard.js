@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     LayoutDashboard, ChefHat, ShoppingBag, User, LogOut, Search, Bell,
-    Menu, X, Loader2, Flame, Star, Camera, Save, Plus, Trash2, Sparkles, Send, Activity, ListChecks, Trophy
+    Menu, X, Loader2, Flame, Star, Camera, Save, Plus, Trash2, Sparkles, 
+    Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle 
 } from 'lucide-react';
+
+import { logMeal } from '../api';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import RecipeCard from '../components/RecipeCard';
@@ -13,65 +16,201 @@ import API_URL from '../config';
 
 // --- SUB-COMPONENTS ---
 
-const OverviewTab = ({ user, trendingRecipes }) => (
-    <div className="space-y-8 animate-fadeIn pb-10">
-        {/* Hero Banner */}
-        <div className="bg-slate-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
-            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                <div>
-                    <h2 className="text-3xl font-bold mb-2 flex items-center gap-2">
-                        Hello, {user.username} <span className="text-2xl">👋</span>
+
+const OverviewTab = ({ user, setActiveTab }) => {
+    // 1. Time Logic
+    const hour = new Date().getHours();
+    const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+    const nextMeal = hour < 11 ? 'Breakfast' : hour < 15 ? 'Lunch' : hour < 20 ? 'Dinner' : 'Snack';
+    const streakDays = user.streak || 1;
+
+    // 2. Stats State (For the Fuel Gauge)
+    const [todayStats, setTodayStats] = useState({ calories: 0, goal: user.calorieGoal || 2000 });
+    const [loading, setLoading] = useState(true);
+    
+    // 3. Quick Add Loading State
+    const [addingItem, setAddingItem] = useState(null);
+
+    // 4. Fetch Data on Load
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const today = new Date().toISOString().split('T')[0];
+                const res = await axios.get(`${API_URL}/meals/date/${today}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                const meals = res.data.meals || [];
+                const totalCals = meals.reduce((sum, m) => sum + (m.nutrition?.calories || 0), 0);
+                
+                setTodayStats({ calories: totalCals, goal: user.calorieGoal || 2000 });
+            } catch (err) {
+                console.error("Stats error", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, [user.calorieGoal]);
+
+    // 5. FUNCTION: Handle Quick Add Buttons
+    const handleQuickAdd = async (item) => {
+        setAddingItem(item.name); // Start loading spinner on specific button
+        try {
+            await logMeal({
+                name: item.name,
+                type: 'snack', // Defaulting quick adds to 'snack'
+                date: new Date().toISOString().split('T')[0],
+                nutrition: { 
+                    calories: item.cal, 
+                    protein: 0, carbs: 0, fats: 0 // Simple log
+                },
+                servingSize: '1 portion',
+                notes: 'Quick add from Dashboard'
+            });
+
+            // Update UI immediately (Fuel Gauge)
+            setTodayStats(prev => ({ ...prev, calories: prev.calories + item.cal }));
+            
+        } catch (error) {
+            alert("Failed to log item. Check connection.");
+        } finally {
+            setAddingItem(null); // Stop loading
+        }
+    };
+
+    // Calculate Percentage for Fuel Gauge
+    const percent = Math.min((todayStats.calories / todayStats.goal) * 100, 100);
+
+    return (
+        <div className="space-y-8 animate-fadeIn pb-10 max-w-6xl mx-auto">
+            
+            {/* 1. HERO SECTION */}
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="relative z-10">
+                    <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider text-xs mb-2">
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                        Online & Tracking
+                    </div>
+                    <h2 className="text-3xl font-bold mb-2 capitalize">
+                        Good {timeOfDay}, {user.username}.
                     </h2>
-                    <p className="text-slate-300 max-w-xl text-lg">
-                        Your goal is <span className="text-emerald-400 font-bold uppercase tracking-wide">{user.goals || 'Balanced'}</span>.
-                        Let's find something delicious.
+                    <p className="text-slate-300 max-w-md mb-4">
+                        Consistency is key. You're on a roll with your <span className="text-white font-bold">{user.goals || 'balanced'}</span> journey.
                     </p>
-                </div>
-            </div>
-            {/* Background Decorations */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-        </div>
-
-        {/* Trending Section */}
-        <div>
-            <div className="flex items-center gap-2 mb-6">
-                <Sparkles className="text-emerald-600" size={24} />
-                <h3 className="text-xl font-bold text-slate-900">Trending Recipes</h3>
-            </div>
-
-            {trendingRecipes.length === 0 ? (
-                <div className="bg-white p-8 rounded-2xl text-center border border-dashed border-slate-300">
-                    <p className="text-slate-500">Start generating recipes to see them appear here!</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg-grid-cols-4 gap-6">
-                    {trendingRecipes.map((item, idx) => (
-                        <div key={idx} className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all overflow-hidden group cursor-pointer transform hover:-translate-y-1">
-                            <div className="h-40 overflow-hidden relative bg-slate-100">
-                                <img
-                                    src={item.image || `https://source.unsplash.com/featured/?food,${item.name}`}
-                                    alt={item.name}
-                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                    onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80'}
-                                />
-                                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm">
-                                    <Star size={12} className="fill-yellow-400 text-yellow-400" /> 4.9
-                                </div>
-                            </div>
-                            <div className="p-5">
-                                <h4 className="font-bold text-slate-800 mb-1 truncate text-lg">{item.name}</h4>
-                                <div className="flex items-center gap-4 text-sm text-slate-500 mt-2">
-                                    <span className="flex items-center gap-1 bg-orange-50 text-orange-700 px-2 py-0.5 rounded"><Flame size={14} /> {item.nutrition?.calories || 400} kcal</span>
-                                </div>
-                            </div>
+                    
+                    {/* Fuel Gauge */}
+                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 max-w-sm backdrop-blur-sm">
+                        <div className="flex justify-between text-xs text-slate-400 mb-2 font-medium">
+                            <span>Daily Fuel</span>
+                            <span>{Math.round(todayStats.calories)} / {todayStats.goal} kcal</span>
                         </div>
+                        <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-1000 relative"
+                                style={{ width: `${percent}%` }}
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Streak Card */}
+                <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center gap-4 min-w-[180px] z-10 hover:bg-white/20 transition-colors cursor-default">
+                    <div className="bg-orange-500/20 p-3 rounded-xl text-orange-400">
+                        <Flame size={32} fill="currentColor" />
+                    </div>
+                    <div>
+                        <div className="text-3xl font-bold">{streakDays}</div>
+                        <div className="text-xs text-slate-300 font-medium uppercase tracking-wide">Day Streak</div>
+                    </div>
+                </div>
+
+                {/* Background Decoration */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+            </div>
+
+            {/* 2. SMART ACTIONS GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* A. AI Chef Prompt (Working Button) */}
+                <div 
+                    onClick={() => setActiveTab('ai-chef')} // ✅ THIS SWITCHES TABS
+                    className="md:col-span-2 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center gap-6 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer"
+                >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+                    
+                    <div className="bg-emerald-100 p-4 rounded-full text-emerald-600 z-10">
+                        <ChefHat size={32} />
+                    </div>
+                    <div className="flex-1 text-center sm:text-left z-10">
+                        <h3 className="text-lg font-bold text-slate-900">Time for {nextMeal}?</h3>
+                        <p className="text-slate-500 text-sm mb-4">
+                            Not sure what to cook? Let NutriFit Assistant check your pantry and suggest a perfect {user.goals} meal.
+                        </p>
+                        <span className="text-emerald-600 text-sm font-bold flex items-center gap-2 justify-center sm:justify-start group-hover:gap-3 transition-all">
+                            Generate {nextMeal} <ArrowRight size={16} />
+                        </span>
+                    </div>
+                </div>
+
+                {/* B. Manual Logging (Working Button) */}
+                <div 
+                    onClick={() => setActiveTab('nutrition')} // ✅ THIS SWITCHES TABS
+                    className="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-200 flex flex-col justify-between cursor-pointer hover:bg-blue-700 transition-colors relative overflow-hidden group"
+                >
+                    <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                    
+                    <div className="flex justify-between items-start z-10">
+                        <div>
+                            <h3 className="font-bold text-lg">Log Manually</h3>
+                            <p className="text-blue-100 text-xs">Add items without AI</p>
+                        </div>
+                        <Plus size={24} className="bg-white/20 p-1 rounded-lg" />
+                    </div>
+                    <div className="z-10 mt-4">
+                        <div className="flex items-center gap-2 opacity-90 group-hover:opacity-100">
+                            <span className="text-sm font-bold">Track calories & macros</span>
+                            <ArrowRight size={14} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 3. QUICK ADD (Working Buttons with API) */}
+            <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-4 px-2">Quick Add</h3>
+                <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar px-2">
+                    {[
+                        { name: 'Water (250ml)', icon: '💧', cal: 0 },
+                        { name: 'Coffee', icon: '☕', cal: 5 },
+                        { name: 'Banana', icon: '🍌', cal: 105 },
+                        { name: 'Apple', icon: '🍎', cal: 95 },
+                        { name: 'Protein Shake', icon: '🥤', cal: 180 },
+                        { name: 'Yogurt', icon: '🥣', cal: 120 }
+                    ].map((item, idx) => (
+                        <button 
+                            key={idx}
+                            onClick={() => handleQuickAdd(item)} // ✅ THIS SAVES TO DB
+                            disabled={addingItem !== null}
+                            className="flex-shrink-0 bg-white border border-slate-100 p-4 rounded-2xl min-w-[140px] hover:border-emerald-500 hover:shadow-md transition-all text-left group relative"
+                        >
+                            {addingItem === item.name ? (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-2xl">
+                                    <Loader2 className="animate-spin text-emerald-600" size={24} />
+                                </div>
+                            ) : null}
+                            
+                            <span className="text-2xl mb-2 block group-hover:scale-110 transition-transform">{item.icon}</span>
+                            <div className="font-bold text-slate-700 text-sm">{item.name}</div>
+                            <div className="text-xs text-slate-400 font-medium group-hover:text-emerald-500">{item.cal} kcal</div>
+                        </button>
                     ))}
                 </div>
-            )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // In client/src/pages/Dashboard.js
 
@@ -81,151 +220,168 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
     const [preferences, setPreferences] = useState({
         cuisine: 'any',
         mealType: 'any',
-        dietaryRestrictions: user?.dietaryRestrictions || [], // Restored Default
+        dietaryRestrictions: user?.dietaryRestrictions || [],
         maxCalories: '',
-        maxPrepTime: ''
     });
 
-    const cuisines = [
-        'any', 'Kenyan', 'Italian', 'Mexican', 'Asian', 
-        'Indian', 'Mediterranean', 'American', 'French', 'Thai', 'Japanese'
-    ];
+    const cuisines = ['any', 'Kenyan', 'Italian', 'Mexican', 'Asian', 'Indian', 'Mediterranean', 'American'];
+    const mealTypes = ['any', 'breakfast', 'lunch', 'dinner', 'snack'];
     
-    const dietaryOptions = ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'keto', 'paleo', 'nut-free'];
+    // ✅ RENAMED: clearer, simple English terms
+    const dietaryOptions = [
+        'vegetarian', 
+        'vegan', 
+        'gluten-free', 
+        'dairy-free', 
+        'low-carb',     // Replaced 'keto'
+        'high-protein', // Replaced 'paleo'
+        'nut-free'
+    ];
 
-    // --- HANDLERS ---
     const handlePreferenceChange = (key, value) => {
-        // Special logic for toggling allergies (Array)
         if (key === 'dietaryRestrictions') {
             const current = preferences.dietaryRestrictions || [];
-            const updated = current.includes(value)
-                ? current.filter(r => r !== value) // Remove if exists
-                : [...current, value]; // Add if doesn't exist
+            const updated = current.includes(value) ? current.filter(r => r !== value) : [...current, value];
             setPreferences({ ...preferences, dietaryRestrictions: updated });
         } else {
-            // Standard logic for text/dropdowns
             setPreferences({ ...preferences, [key]: value });
         }
     };
 
-    const handleGenerateWithPreferences = () => {
-        handleGenerateRecipes(preferences);
-    };
-
     return (
-        <div className="max-w-6xl mx-auto h-full flex flex-col animate-fadeIn">
+        <div className="max-w-5xl mx-auto h-full flex flex-col animate-fadeIn relative">
             
-            {/* --- FIXED HEADER (Input + All Filters) --- */}
-            <div className="bg-white p-6 rounded-b-3xl shadow-sm border-x border-b border-slate-200 z-10 sticky top-0">
-                
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="bg-emerald-100 p-2 rounded-lg text-emerald-700">
-                        <ChefHat size={24} />
+            {/* --- 1. HEADER & STATUS --- */}
+            <div className="pt-6 px-6 pb-2 text-center">
+                <div className="inline-flex items-center gap-3 bg-white px-5 py-2 rounded-full shadow-sm border border-slate-200 mb-6">
+                    <div className="relative">
+                        <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
                     </div>
-                    <h2 className="text-xl font-bold text-slate-900">AI Chef Assistant</h2>
+                    <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">NutriFit Assistant Online</span>
                 </div>
 
-                {/* Main Input Field */}
-                <div className="relative flex items-center gap-2 mb-4">
-                    <div className="absolute left-4 text-slate-400"><ShoppingBag size={20}/></div>
-                    <input
-                        type="text"
-                        className="w-full pl-12 pr-36 py-4 bg-slate-50 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
-                        placeholder="e.g., chicken, sukuma wiki, tomatoes..."
-                        value={pantryInput}
-                        onChange={(e) => setPantryInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateWithPreferences()}
-                    />
-                    <button
-                        onClick={handleGenerateWithPreferences}
-                        disabled={isGenerating || !pantryInput.trim()}
-                        className="absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-6 rounded-lg font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center gap-2 transition-all"
-                    >
-                        {isGenerating ? <Loader2 className="animate-spin" size={18} /> : "Generate"}
-                    </button>
-                </div>
+                {/* Welcome Message (Hides when results appear) */}
+                {aiRecipes.length === 0 && !isGenerating && (
+                    <div className="max-w-xl mx-auto mb-6 animate-slideDown">
+                        <h2 className="text-3xl font-bold text-slate-900 mb-2">What are we cooking today?</h2>
+                        <p className="text-slate-500">
+                            Tell me your ingredients, select your preferences, and I'll generate a chef-quality recipe for you.
+                        </p>
+                    </div>
+                )}
+            </div>
 
-                {/* --- SCROLLABLE FILTERS ROW --- */}
-                {/* Scroll horizontally to see all options */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+            {/* --- 2. PROFESSIONAL INPUT & FILTERS --- */}
+            <div className={`px-6 z-20 transition-all duration-500 ${aiRecipes.length > 0 ? 'sticky top-0 bg-slate-50/95 backdrop-blur-md pt-4 pb-4 border-b border-slate-200 shadow-sm' : 'pb-6'}`}>
+                <div className="max-w-3xl mx-auto space-y-4">
                     
-                    {/* 1. Cuisine */}
-                    <select 
-                        value={preferences.cuisine}
-                        onChange={(e) => handlePreferenceChange('cuisine', e.target.value)}
-                        className="flex-shrink-0 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                    >
-                        {cuisines.map(c => (
-                            <option key={c} value={c}>{c === 'any' ? 'Any Cuisine' : c}</option>
-                        ))}
-                    </select>
-
-                    {/* 2. Meal Type */}
-                    <select 
-                        value={preferences.mealType}
-                        onChange={(e) => handlePreferenceChange('mealType', e.target.value)}
-                        className="flex-shrink-0 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                    >
-                        <option value="any">Any Meal</option>
-                        {['breakfast', 'lunch', 'dinner', 'snack'].map(t => (
-                            <option key={t} value={t} className="capitalize">{t}</option>
-                        ))}
-                    </select>
-
-                    {/* 3. Calories */}
-                    <input 
-                        type="number" 
-                        placeholder="Max Cals"
-                        className="flex-shrink-0 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 w-24 outline-none focus:ring-2 focus:ring-emerald-500"
-                        value={preferences.maxCalories}
-                        onChange={(e) => handlePreferenceChange('maxCalories', e.target.value)}
-                    />
-
-                    {/* 4. Prep Time */}
-                     <input 
-                        type="number" 
-                        placeholder="Mins"
-                        className="flex-shrink-0 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 w-20 outline-none focus:ring-2 focus:ring-emerald-500"
-                        value={preferences.maxPrepTime}
-                        onChange={(e) => handlePreferenceChange('maxPrepTime', e.target.value)}
-                    />
-
-                    {/* Divider */}
-                    <div className="w-px h-6 bg-slate-300 mx-2 flex-shrink-0"></div>
-
-                    {/* 5. Dietary Restrictions (Allergies) */}
-                    {dietaryOptions.map(option => (
+                    {/* A. Search Bar (Big & Clean) */}
+                    <div className="relative flex items-center group">
+                        <div className="absolute left-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors">
+                            <ShoppingBag size={22}/>
+                        </div>
+                        <input
+                            type="text"
+                            className="w-full py-4 pl-12 pr-36 bg-white rounded-2xl border border-slate-200 shadow-sm focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none font-medium text-lg text-slate-700 placeholder:text-slate-400 transition-all"
+                            placeholder="e.g. Maize flour, beef, sukuma wiki..."
+                            value={pantryInput}
+                            onChange={(e) => setPantryInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateRecipes(preferences)}
+                        />
                         <button
-                            key={option}
-                            onClick={() => handlePreferenceChange('dietaryRestrictions', option)}
-                            className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize border ${
-                                preferences.dietaryRestrictions.includes(option)
-                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
-                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                            }`}
+                            onClick={() => handleGenerateRecipes(preferences)}
+                            disabled={isGenerating || !pantryInput.trim()}
+                            className="absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-6 rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center gap-2 transition-all shadow-md active:scale-95"
                         >
-                            {option}
+                            {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20}/>}
                         </button>
-                    ))}
+                    </div>
+
+                    {/* B. Filter Cards (Horizontal Scroll) */}
+                    <div className="flex flex-col gap-3">
+                        
+                        {/* Row 1: Primary Dropdowns (Styled as Cards) */}
+                        <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                            
+                            {/* Cuisine Card */}
+                            <div className="relative flex-shrink-0 group">
+                                <select 
+                                    value={preferences.cuisine}
+                                    onChange={(e) => handlePreferenceChange('cuisine', e.target.value)}
+                                    className="appearance-none bg-white pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 outline-none hover:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all shadow-sm"
+                                >
+                                    {cuisines.map(c => <option key={c} value={c}>{c === 'any' ? '🌍 Any Cuisine' : c}</option>)}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <ArrowRight size={12} className="rotate-90" />
+                                </div>
+                            </div>
+
+                            {/* Meal Type Card */}
+                            <div className="relative flex-shrink-0 group">
+                                <select 
+                                    value={preferences.mealType}
+                                    onChange={(e) => handlePreferenceChange('mealType', e.target.value)}
+                                    className="appearance-none bg-white pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 outline-none hover:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all shadow-sm"
+                                >
+                                    {mealTypes.map(t => <option key={t} value={t} className="capitalize">{t === 'any' ? '🍽️ Any Meal' : t}</option>)}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <ArrowRight size={12} className="rotate-90" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Row 2: Dietary Tags (Pill Style) */}
+                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar items-center">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide flex-shrink-0 mr-1">Diet:</span>
+                            {dietaryOptions.map(option => {
+                                const isActive = preferences.dietaryRestrictions.includes(option);
+                                return (
+                                    <button
+                                        key={option}
+                                        onClick={() => handlePreferenceChange('dietaryRestrictions', option)}
+                                        className={`
+                                            flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all border shadow-sm
+                                            ${isActive 
+                                                ? 'bg-emerald-600 text-white border-emerald-600 scale-105' 
+                                                : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-400 hover:text-emerald-600'
+                                            }
+                                        `}
+                                    >
+                                        {isActive && <Check size={10} className="inline mr-1 -mt-0.5" />}
+                                        {option.replace('-', ' ')}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* --- RESULTS AREA --- */}
-            <div className="flex-1 p-4 pb-20 overflow-y-auto">
+            {/* --- 3. RESULTS AREA --- */}
+            <div className="flex-1 px-6 pb-20 overflow-y-auto custom-scrollbar">
+                
                 {isGenerating && (
-                    <div className="text-center py-10 animate-pulse">
-                        <div className="inline-block p-4 rounded-full bg-emerald-50 mb-3">
-                            <ChefHat size={32} className="text-emerald-600" />
+                    <div className="flex flex-col items-center justify-center py-12 animate-pulse">
+                        <div className="bg-white p-5 rounded-full shadow-xl mb-5 border border-emerald-100">
+                            <ChefHat size={40} className="text-emerald-600" />
                         </div>
-                        <p className="text-slate-500 font-medium">Chef is cooking up recipes...</p>
+                        <h3 className="text-lg font-bold text-slate-800">Analyzing your ingredients...</h3>
+                        <p className="text-slate-500 text-sm">Reviewing {preferences.cuisine !== 'any' ? preferences.cuisine : 'global'} recipes</p>
                     </div>
                 )}
 
-                {aiRecipes.length > 0 && !isGenerating && (
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <h3 className="font-bold text-slate-700">Results</h3>
-                            <button onClick={() => setAiRecipes([])} className="text-xs text-red-400 hover:text-red-500 font-bold uppercase">Clear Results</button>
+                {!isGenerating && aiRecipes.length > 0 && (
+                    <div className="animate-slideUp">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                                <Sparkles size={18} className="text-emerald-500" /> 
+                                Recommended for you
+                            </h3>
+                            <button onClick={() => setAiRecipes([])} className="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wide">
+                                Clear Results
+                            </button>
                         </div>
                         <div className="grid md:grid-cols-2 gap-6">
                             {aiRecipes.map((recipe, idx) => (
@@ -239,74 +395,166 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
     );
 };
 
-const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user }) => {
+// --- UPDATED PANTRY TAB (Self-Refreshing) ---
+const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab, setPantryInput }) => {
     const [newItem, setNewItem] = useState('');
+    const [selectedItems, setSelectedItems] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // ✅ NEW: Auto-Refresh Data when opening this tab
+    useEffect(() => {
+        const refreshPantry = async () => {
+            setIsLoading(true);
+            try {
+                const token = localStorage.getItem('token');
+                // Fetch fresh user profile
+                const res = await axios.get(`${API_URL}/user/profile`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                // If server data is different from local prop, update it!
+                const serverPantry = res.data.data.pantry || [];
+                if (JSON.stringify(serverPantry) !== JSON.stringify(pantry)) {
+                    setPantry(serverPantry);
+                }
+            } catch (err) {
+                console.error("Failed to refresh pantry:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        refreshPantry();
+    }, []); // Runs once when tab opens
 
     const addItem = () => {
         if (!newItem.trim()) return;
-        const updatedPantry = [...(pantry || []), newItem];
+        if (pantry.includes(newItem.trim())) {
+            setNewItem('');
+            return;
+        }
+        const updatedPantry = [newItem.trim(), ...(pantry || [])];
         setPantry(updatedPantry);
         handleUpdateProfile({ ...user, pantry: updatedPantry }, false);
         setNewItem('');
     };
 
-    const removeItem = (index) => {
-        const updatedPantry = pantry.filter((_, i) => i !== index);
-        setPantry(updatedPantry);
-        handleUpdateProfile({ ...user, pantry: updatedPantry }, false);
+    const toggleSelection = (item) => {
+        if (selectedItems.includes(item)) {
+            setSelectedItems(selectedItems.filter(i => i !== item));
+        } else {
+            setSelectedItems([...selectedItems, item]);
+        }
+    };
+
+    const deleteSelected = () => {
+        if (window.confirm(`Remove ${selectedItems.length} items from pantry?`)) {
+            const updatedPantry = pantry.filter(item => !selectedItems.includes(item));
+            setPantry(updatedPantry);
+            handleUpdateProfile({ ...user, pantry: updatedPantry }, false);
+            setSelectedItems([]);
+        }
+    };
+
+    const cookSelected = () => {
+        const ingredients = selectedItems.join(', ');
+        setPantryInput(ingredients);
+        setActiveTab('ai-chef');
     };
 
     return (
-        <div className="max-w-4xl mx-auto animate-fadeIn">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[600px]">
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-900">My Pantry</h2>
-                        <p className="text-slate-500">Manage what you have in stock.</p>
+        <div className="max-w-4xl mx-auto animate-fadeIn pb-10">
+            {/* Header */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 mb-6 relative overflow-hidden">
+                <div className="relative z-10">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-900">My Digital Pantry</h2>
+                            <p className="text-slate-500">Select items to cook with or remove.</p>
+                        </div>
+                        <div className="bg-emerald-100 text-emerald-800 font-bold px-4 py-2 rounded-xl flex items-center gap-2">
+                            {isLoading ? <Loader2 size={18} className="animate-spin"/> : <ShoppingBag size={18} />}
+                            {pantry?.length || 0} Items
+                        </div>
                     </div>
-                    <div className="bg-emerald-100 text-emerald-800 font-bold px-4 py-2 rounded-xl">
-                        {pantry?.length || 0} Items
-                    </div>
-                </div>
 
-                <div className="flex gap-2 mb-8">
-                    <input
-                        className="flex-1 p-4 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Add an item (e.g., Olive Oil)"
-                        value={newItem}
-                        onChange={(e) => setNewItem(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && addItem()}
-                    />
-                    <button
-                        onClick={addItem}
-                        className="bg-slate-900 text-white px-6 rounded-xl hover:bg-slate-800 transition-colors"
-                    >
-                        <Plus size={24} />
-                    </button>
-                </div>
-
-                {(!pantry || pantry.length === 0) ? (
-                    <div className="text-center py-20 text-slate-400">
-                        <ShoppingBag size={48} className="mx-auto mb-4 opacity-20" />
-                        <p>Your pantry is empty.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {pantry.map((item, idx) => (
-                            <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center group hover:border-emerald-300 transition-all">
-                                <span className="font-medium text-slate-700">{item}</span>
-                                <button onClick={() => removeItem(idx)} className="text-slate-400 hover:text-red-500 transition-colors">
-                                    <Trash2 size={16} />
-                                </button>
+                    <div className="flex gap-3">
+                        <div className="relative flex-1">
+                            <input
+                                className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all font-medium"
+                                placeholder="Add item (e.g. Maize Flour)..."
+                                value={newItem}
+                                onChange={(e) => setNewItem(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && addItem()}
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                <Plus size={20} />
                             </div>
-                        ))}
+                        </div>
+                        <button onClick={addItem} className="bg-slate-900 text-white px-8 rounded-2xl font-bold hover:bg-slate-800 transition-colors shadow-lg">
+                            Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Actions Bar */}
+            {selectedItems.length > 0 && (
+                <div className="sticky top-4 z-20 mb-6 animate-slideDown">
+                    <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-xl flex justify-between items-center mx-auto max-w-lg">
+                        <span className="font-bold ml-2">{selectedItems.length} Selected</span>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={deleteSelected}
+                                className="px-4 py-2 bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                            >
+                                <Trash2 size={16} /> Remove
+                            </button>
+                            <button 
+                                onClick={cookSelected}
+                                className="px-6 py-2 bg-emerald-500 text-white hover:bg-emerald-400 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg"
+                            >
+                                <ChefHat size={16} /> Plan Meal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Items Grid */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                {isLoading && pantry.length === 0 ? (
+                    <div className="text-center py-20 text-slate-400">Loading inventory...</div>
+                ) : (!pantry || pantry.length === 0) ? (
+                    <div className="text-center py-20 text-slate-400">Your pantry is empty.</div>
+                ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {pantry.map((item, idx) => {
+                            const isSelected = selectedItems.includes(item);
+                            return (
+                                <div 
+                                    key={idx} 
+                                    onClick={() => toggleSelection(item)}
+                                    className={`
+                                        cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between group
+                                        ${isSelected 
+                                            ? 'bg-emerald-50 border-emerald-500 shadow-md ring-1 ring-emerald-500' 
+                                            : 'bg-slate-50 border-slate-200 hover:border-emerald-300'
+                                        }
+                                    `}
+                                >
+                                    <span className={`font-bold capitalize truncate pr-2 ${isSelected ? 'text-emerald-900' : 'text-slate-700'}`}>
+                                        {item}
+                                    </span>
+                                    {isSelected && <CheckCircle size={18} className="text-emerald-600 flex-shrink-0" />}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
         </div>
     );
 };
-
 const ProfileTab = ({ user, handleUpdateProfile, handleImageUpload }) => {
     const [editForm, setEditForm] = useState({ ...user });
     const fileInputRef = useRef(null);
@@ -587,7 +835,7 @@ export default function Dashboard() {
                         { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
                         { id: 'nutrition', icon: Activity, label: 'Nutrition' },
                         { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' },
-                        { id: 'ai-chef', icon: ChefHat, label: 'Chef Gemini' },
+                        { id: 'ai-chef', icon: ChefHat, label: 'NutriFit Assistant' },
                         { id: 'grocery', icon: ListChecks, label: 'Grocery' },
                         { id: 'pantry', icon: ShoppingBag, label: 'My Pantry' },
                         { id: 'profile', icon: User, label: 'Settings' },
@@ -645,10 +893,15 @@ export default function Dashboard() {
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
-                    {activeTab === 'overview' && <OverviewTab user={user} trendingRecipes={trendingRecipes} />}
+                    {activeTab === 'overview' && <OverviewTab user={user} setActiveTab={setActiveTab} />}
                     {activeTab === 'nutrition' && <NutritionDashboard />}
                     {activeTab === 'leaderboard' && <Leaderboard />}
-                    {activeTab === 'grocery' && <GroceryList />}
+                    {activeTab === 'grocery' && (
+                        <GroceryList 
+                            user={user} 
+                            handleUpdateProfile={handleUpdateProfile} 
+                        />
+                    )}
                     {activeTab === 'ai-chef' && (
                         <AIChefTab
                             pantryInput={pantryInput}
@@ -666,6 +919,8 @@ export default function Dashboard() {
                             setPantry={(p) => setUser({...user, pantry: p})}
                             handleUpdateProfile={handleUpdateProfile}
                             user={user}
+                            setActiveTab={setActiveTab}
+                            setPantryInput={setPantryInput}
                         />
                     )}
                     {activeTab === 'profile' && (
@@ -675,9 +930,26 @@ export default function Dashboard() {
                             handleImageUpload={handleImageUpload}
                         />
                     )}
+                    {/* ... end of activeTab components ... */}
+
+    {/* --- PROFESSIONAL FOOTER --- */}
+    <div className="mt-auto py-8 text-center border-t border-slate-200/60 mx-8">
+        <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">
+            NutriFit • Health & Wellness
+        </p>
+        <div className="flex justify-center gap-4 mt-2 text-[10px] text-slate-400 font-medium">
+            <a href="#" className="hover:text-emerald-600 transition-colors">Privacy</a>
+            <span>•</span>
+            <a href="#" className="hover:text-emerald-600 transition-colors">Terms</a>
+            <span>•</span>
+            <a href="#" className="hover:text-emerald-600 transition-colors">Support</a>
+        </div>
+    </div>
+
                 </main>
             </div>
         </div>
     );
+    
 }
 
