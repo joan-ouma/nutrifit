@@ -86,6 +86,12 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
         maxPrepTime: ''
     });
 
+    
+    const cuisines = [
+        'any', 'Kenyan', 'Italian', 'Mexican', 'Asian', 
+        'Indian', 'Mediterranean', 'American', 'French', 'Thai', 'Japanese'
+    ];
+
     const handlePreferenceChange = (key, value) => {
         setPreferences({ ...preferences, [key]: value });
     };
@@ -97,10 +103,9 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
     return (
         <div className="max-w-6xl mx-auto h-full flex flex-col animate-fadeIn">
             
-            {/* --- SECTION 1: THE INPUT BAR (Always at Top) --- */}
+            {/* --- SECTION 1: THE INPUT BAR (Fixed at Top) --- */}
             <div className="bg-white p-6 rounded-b-3xl shadow-sm border-x border-b border-slate-200 z-10 sticky top-0">
                 
-                {/* Header */}
                 <div className="flex items-center gap-3 mb-4">
                     <div className="bg-emerald-100 p-2 rounded-lg text-emerald-700">
                         <ChefHat size={24} />
@@ -114,7 +119,7 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
                     <input
                         type="text"
                         className="w-full pl-12 pr-36 py-4 bg-slate-50 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
-                        placeholder="e.g., chicken, rice, garlic..."
+                        placeholder="e.g., sukuma wiki, maize flour, beef..."
                         value={pantryInput}
                         onChange={(e) => setPantryInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateWithPreferences()}
@@ -130,24 +135,35 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
 
                 {/* Filters Row */}
                 <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    {['cuisine', 'mealType'].map((filter) => (
-                        <select 
-                            key={filter}
-                            value={preferences[filter]}
-                            onChange={(e) => handlePreferenceChange(filter, e.target.value)}
-                            className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none"
-                        >
-                            <option value="any">Any {filter === 'cuisine' ? 'Cuisine' : 'Meal'}</option>
-                            {filter === 'cuisine' 
-                                ? ['Italian', 'Mexican', 'Asian', 'Indian'].map(c => <option key={c} value={c}>{c}</option>)
-                                : ['breakfast', 'lunch', 'dinner'].map(t => <option key={t} value={t}>{t}</option>)
-                            }
-                        </select>
-                    ))}
+                    {/* Cuisine Dropdown */}
+                    <select 
+                        value={preferences.cuisine}
+                        onChange={(e) => handlePreferenceChange('cuisine', e.target.value)}
+                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                        {cuisines.map(c => (
+                            <option key={c} value={c}>
+                                {c === 'any' ? 'Any Cuisine' : c}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Meal Type Dropdown */}
+                    <select 
+                        value={preferences.mealType}
+                        onChange={(e) => handlePreferenceChange('mealType', e.target.value)}
+                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                        <option value="any">Any Meal</option>
+                        {['breakfast', 'lunch', 'dinner', 'snack'].map(t => (
+                            <option key={t} value={t} className="capitalize">{t}</option>
+                        ))}
+                    </select>
+
                     <input 
                         type="number" 
                         placeholder="Max Cals"
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 w-24 outline-none"
+                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 w-24 outline-none focus:ring-2 focus:ring-emerald-500"
                         value={preferences.maxCalories}
                         onChange={(e) => handlePreferenceChange('maxCalories', e.target.value)}
                     />
@@ -161,7 +177,7 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
                         <div className="inline-block p-4 rounded-full bg-emerald-50 mb-3">
                             <ChefHat size={32} className="text-emerald-600" />
                         </div>
-                        <p className="text-slate-500 font-medium">Creating recipes...</p>
+                        <p className="text-slate-500 font-medium">Chef is cooking up recipes...</p>
                     </div>
                 )}
 
@@ -169,7 +185,7 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold text-slate-700">Results</h3>
-                            <button onClick={() => setAiRecipes([])} className="text-xs text-red-400 hover:text-red-500">Clear</button>
+                            <button onClick={() => setAiRecipes([])} className="text-xs text-red-400 hover:text-red-500 font-bold uppercase">Clear Results</button>
                         </div>
                         <div className="grid md:grid-cols-2 gap-6">
                             {aiRecipes.map((recipe, idx) => (
