@@ -77,23 +77,35 @@ const OverviewTab = ({ user, trendingRecipes }) => (
 
 const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGenerating, aiRecipes, setAiRecipes, user }) => {
     
-    // --- STATE & HANDLERS ---
+    // --- STATE ---
     const [preferences, setPreferences] = useState({
         cuisine: 'any',
         mealType: 'any',
-        dietaryRestrictions: user?.dietaryRestrictions || [],
+        dietaryRestrictions: user?.dietaryRestrictions || [], // Restored Default
         maxCalories: '',
         maxPrepTime: ''
     });
 
-    
     const cuisines = [
         'any', 'Kenyan', 'Italian', 'Mexican', 'Asian', 
         'Indian', 'Mediterranean', 'American', 'French', 'Thai', 'Japanese'
     ];
+    
+    const dietaryOptions = ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'keto', 'paleo', 'nut-free'];
 
+    // --- HANDLERS ---
     const handlePreferenceChange = (key, value) => {
-        setPreferences({ ...preferences, [key]: value });
+        // Special logic for toggling allergies (Array)
+        if (key === 'dietaryRestrictions') {
+            const current = preferences.dietaryRestrictions || [];
+            const updated = current.includes(value)
+                ? current.filter(r => r !== value) // Remove if exists
+                : [...current, value]; // Add if doesn't exist
+            setPreferences({ ...preferences, dietaryRestrictions: updated });
+        } else {
+            // Standard logic for text/dropdowns
+            setPreferences({ ...preferences, [key]: value });
+        }
     };
 
     const handleGenerateWithPreferences = () => {
@@ -103,7 +115,7 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
     return (
         <div className="max-w-6xl mx-auto h-full flex flex-col animate-fadeIn">
             
-            {/* --- SECTION 1: THE INPUT BAR (Fixed at Top) --- */}
+            {/* --- FIXED HEADER (Input + All Filters) --- */}
             <div className="bg-white p-6 rounded-b-3xl shadow-sm border-x border-b border-slate-200 z-10 sticky top-0">
                 
                 <div className="flex items-center gap-3 mb-4">
@@ -113,13 +125,13 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
                     <h2 className="text-xl font-bold text-slate-900">AI Chef Assistant</h2>
                 </div>
 
-                {/* Input Field */}
+                {/* Main Input Field */}
                 <div className="relative flex items-center gap-2 mb-4">
                     <div className="absolute left-4 text-slate-400"><ShoppingBag size={20}/></div>
                     <input
                         type="text"
                         className="w-full pl-12 pr-36 py-4 bg-slate-50 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
-                        placeholder="e.g., sukuma wiki, maize flour, beef..."
+                        placeholder="e.g., chicken, sukuma wiki, tomatoes..."
                         value={pantryInput}
                         onChange={(e) => setPantryInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateWithPreferences()}
@@ -133,26 +145,26 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
                     </button>
                 </div>
 
-                {/* Filters Row */}
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    {/* Cuisine Dropdown */}
+                {/* --- SCROLLABLE FILTERS ROW --- */}
+                {/* Scroll horizontally to see all options */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                    
+                    {/* 1. Cuisine */}
                     <select 
                         value={preferences.cuisine}
                         onChange={(e) => handlePreferenceChange('cuisine', e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="flex-shrink-0 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                     >
                         {cuisines.map(c => (
-                            <option key={c} value={c}>
-                                {c === 'any' ? 'Any Cuisine' : c}
-                            </option>
+                            <option key={c} value={c}>{c === 'any' ? 'Any Cuisine' : c}</option>
                         ))}
                     </select>
 
-                    {/* Meal Type Dropdown */}
+                    {/* 2. Meal Type */}
                     <select 
                         value={preferences.mealType}
                         onChange={(e) => handlePreferenceChange('mealType', e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="flex-shrink-0 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                     >
                         <option value="any">Any Meal</option>
                         {['breakfast', 'lunch', 'dinner', 'snack'].map(t => (
@@ -160,17 +172,45 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
                         ))}
                     </select>
 
+                    {/* 3. Calories */}
                     <input 
                         type="number" 
                         placeholder="Max Cals"
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 w-24 outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="flex-shrink-0 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 w-24 outline-none focus:ring-2 focus:ring-emerald-500"
                         value={preferences.maxCalories}
                         onChange={(e) => handlePreferenceChange('maxCalories', e.target.value)}
                     />
+
+                    {/* 4. Prep Time */}
+                     <input 
+                        type="number" 
+                        placeholder="Mins"
+                        className="flex-shrink-0 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 w-20 outline-none focus:ring-2 focus:ring-emerald-500"
+                        value={preferences.maxPrepTime}
+                        onChange={(e) => handlePreferenceChange('maxPrepTime', e.target.value)}
+                    />
+
+                    {/* Divider */}
+                    <div className="w-px h-6 bg-slate-300 mx-2 flex-shrink-0"></div>
+
+                    {/* 5. Dietary Restrictions (Allergies) */}
+                    {dietaryOptions.map(option => (
+                        <button
+                            key={option}
+                            onClick={() => handlePreferenceChange('dietaryRestrictions', option)}
+                            className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize border ${
+                                preferences.dietaryRestrictions.includes(option)
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                            }`}
+                        >
+                            {option}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* --- SECTION 2: THE RESULTS (Scrolls Below) --- */}
+            {/* --- RESULTS AREA --- */}
             <div className="flex-1 p-4 pb-20 overflow-y-auto">
                 {isGenerating && (
                     <div className="text-center py-10 animate-pulse">
