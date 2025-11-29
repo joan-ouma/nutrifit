@@ -73,10 +73,11 @@ const OverviewTab = ({ user, trendingRecipes }) => (
     </div>
 );
 
-const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGenerating, aiRecipes, setAiRecipes, user }) => {
-    // 1. We create a reference point for the bottom of the list
-    const messagesEndRef = useRef(null);
+// In client/src/pages/Dashboard.js
 
+const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGenerating, aiRecipes, setAiRecipes, user }) => {
+    
+    // --- STATE & HANDLERS ---
     const [preferences, setPreferences] = useState({
         cuisine: 'any',
         mealType: 'any',
@@ -85,28 +86,8 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
         maxPrepTime: ''
     });
 
-    const cuisines = ['any', 'Italian', 'Mexican', 'Asian', 'Indian', 'Mediterranean', 'American', 'French', 'Thai', 'Japanese'];
-    const mealTypes = ['any', 'breakfast', 'lunch', 'dinner', 'snack', 'dessert'];
-    const dietaryOptions = ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'keto', 'paleo', 'nut-free'];
-
-    // 2. This effect runs whenever 'aiRecipes' or 'isGenerating' changes
-    useEffect(() => {
-        // If we have recipes or are loading, scroll to the bottom smoothly
-        if (aiRecipes.length > 0 || isGenerating) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }
-    }, [aiRecipes, isGenerating]);
-
     const handlePreferenceChange = (key, value) => {
-        if (key === 'dietaryRestrictions') {
-            const current = preferences.dietaryRestrictions || [];
-            const updated = current.includes(value)
-                ? current.filter(r => r !== value)
-                : [...current, value];
-            setPreferences({ ...preferences, dietaryRestrictions: updated });
-        } else {
-            setPreferences({ ...preferences, [key]: value });
-        }
+        setPreferences({ ...preferences, [key]: value });
     };
 
     const handleGenerateWithPreferences = () => {
@@ -114,133 +95,89 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
     };
 
     return (
-        <div className="max-w-6xl mx-auto h-full flex flex-col animate-fadeIn relative">
+        <div className="max-w-6xl mx-auto h-full flex flex-col animate-fadeIn">
             
-            {/* --- SCROLLABLE CONTENT AREA --- */}
-            {/* We moved the header and preferences INSIDE the scrollable area so everything scrolls together */}
-            <div className="flex-1 overflow-y-auto bg-slate-50/50 custom-scrollbar p-4 pb-0">
+            {/* --- SECTION 1: THE INPUT BAR (Always at Top) --- */}
+            <div className="bg-white p-6 rounded-b-3xl shadow-sm border-x border-b border-slate-200 z-10 sticky top-0">
                 
-                {/* Header & Preferences (Scrolls up out of view when results appear) */}
-                <div className="max-w-4xl mx-auto">
-                    <div className="text-center mb-6 mt-4">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg shadow-emerald-200 mb-4 text-white">
-                            <ChefHat size={32} />
-                        </div>
-                        <h2 className="text-3xl font-bold text-slate-900 mb-2">AI Chef Assistant</h2>
-                        <p className="text-slate-600">Select preferences, enter ingredients, and I'll cook up a plan.</p>
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="bg-emerald-100 p-2 rounded-lg text-emerald-700">
+                        <ChefHat size={24} />
                     </div>
-
-                    {/* Preferences Panel - Collapsible could be added here later */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-8">
-                         <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2 uppercase tracking-wide">
-                            <Sparkles size={16} className="text-emerald-600" />
-                            Configuration
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <select
-                                value={preferences.cuisine}
-                                onChange={(e) => handlePreferenceChange('cuisine', e.target.value)}
-                                className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-                            >
-                                {cuisines.map(c => <option key={c} value={c}>{c === 'any' ? 'Any Cuisine' : c}</option>)}
-                            </select>
-
-                            <select
-                                value={preferences.mealType}
-                                onChange={(e) => handlePreferenceChange('mealType', e.target.value)}
-                                className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-                            >
-                                {mealTypes.map(t => <option key={t} value={t}>{t === 'any' ? 'Any Meal' : t}</option>)}
-                            </select>
-
-                            <input
-                                type="number"
-                                placeholder="Max Cals"
-                                value={preferences.maxCalories}
-                                onChange={(e) => handlePreferenceChange('maxCalories', e.target.value)}
-                                className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-                            />
-                            <input
-                                type="number"
-                                placeholder="Max Mins"
-                                value={preferences.maxPrepTime}
-                                onChange={(e) => handlePreferenceChange('maxPrepTime', e.target.value)}
-                                className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-                            />
-                        </div>
-                    </div>
+                    <h2 className="text-xl font-bold text-slate-900">AI Chef Assistant</h2>
                 </div>
 
-                {/* --- RESULTS AREA --- */}
-                <div className="max-w-5xl mx-auto pb-4">
-                    {aiRecipes.length > 0 && (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                                    <Sparkles className="text-emerald-500" /> Generated for you
-                                </h3>
-                                <button onClick={() => setAiRecipes([])} className="text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wide">
-                                    Clear Results
-                                </button>
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                {aiRecipes.map((recipe, idx) => (
-                                    <RecipeCard key={idx} recipe={recipe} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    
-                    {/* Loading State Bubble */}
-                    {isGenerating && (
-                        <div className="flex justify-center py-8">
-                             <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-md border border-emerald-100">
-                                <Loader2 className="animate-spin text-emerald-600" size={20} />
-                                <span className="text-slate-600 font-medium animate-pulse">Chef is cooking up recipes...</span>
-                             </div>
-                        </div>
-                    )}
+                {/* Input Field */}
+                <div className="relative flex items-center gap-2 mb-4">
+                    <div className="absolute left-4 text-slate-400"><ShoppingBag size={20}/></div>
+                    <input
+                        type="text"
+                        className="w-full pl-12 pr-36 py-4 bg-slate-50 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
+                        placeholder="e.g., chicken, rice, garlic..."
+                        value={pantryInput}
+                        onChange={(e) => setPantryInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateWithPreferences()}
+                    />
+                    <button
+                        onClick={handleGenerateWithPreferences}
+                        disabled={isGenerating || !pantryInput.trim()}
+                        className="absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-6 rounded-lg font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center gap-2 transition-all"
+                    >
+                        {isGenerating ? <Loader2 className="animate-spin" size={18} /> : "Generate"}
+                    </button>
+                </div>
 
-                    {/* 3. The Invisible Anchor - This handles the auto-scroll */}
-                    <div ref={messagesEndRef} className="h-4" />
+                {/* Filters Row */}
+                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    {['cuisine', 'mealType'].map((filter) => (
+                        <select 
+                            key={filter}
+                            value={preferences[filter]}
+                            onChange={(e) => handlePreferenceChange(filter, e.target.value)}
+                            className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none"
+                        >
+                            <option value="any">Any {filter === 'cuisine' ? 'Cuisine' : 'Meal'}</option>
+                            {filter === 'cuisine' 
+                                ? ['Italian', 'Mexican', 'Asian', 'Indian'].map(c => <option key={c} value={c}>{c}</option>)
+                                : ['breakfast', 'lunch', 'dinner'].map(t => <option key={t} value={t}>{t}</option>)
+                            }
+                        </select>
+                    ))}
+                    <input 
+                        type="number" 
+                        placeholder="Max Cals"
+                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 w-24 outline-none"
+                        value={preferences.maxCalories}
+                        onChange={(e) => handlePreferenceChange('maxCalories', e.target.value)}
+                    />
                 </div>
             </div>
 
-            {/* --- FIXED BOTTOM INPUT BAR --- */}
-            <div className="p-4 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
-                <div className="max-w-4xl mx-auto">
-                     {/* Suggestion Chips */}
-                    {aiRecipes.length === 0 && (
-                         <div className="flex overflow-x-auto gap-2 mb-3 pb-1 no-scrollbar">
-                            {['chicken, rice', 'pasta, tomato', 'eggs, cheese'].map(s => (
-                                <button key={s} onClick={() => setPantryInput(s)} className="whitespace-nowrap px-3 py-1 bg-slate-100 rounded-full text-xs text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border border-transparent hover:border-emerald-200">
-                                    {s}
-                                </button>
+            {/* --- SECTION 2: THE RESULTS (Scrolls Below) --- */}
+            <div className="flex-1 p-4 pb-20 overflow-y-auto">
+                {isGenerating && (
+                    <div className="text-center py-10 animate-pulse">
+                        <div className="inline-block p-4 rounded-full bg-emerald-50 mb-3">
+                            <ChefHat size={32} className="text-emerald-600" />
+                        </div>
+                        <p className="text-slate-500 font-medium">Creating recipes...</p>
+                    </div>
+                )}
+
+                {aiRecipes.length > 0 && !isGenerating && (
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-bold text-slate-700">Results</h3>
+                            <button onClick={() => setAiRecipes([])} className="text-xs text-red-400 hover:text-red-500">Clear</button>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {aiRecipes.map((recipe, idx) => (
+                                <RecipeCard key={idx} recipe={recipe} />
                             ))}
                         </div>
-                    )}
-                    
-                    <div className="relative flex items-center gap-2">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                            <ShoppingBag size={20} />
-                        </div>
-                        <input
-                            type="text"
-                            className="w-full pl-12 pr-32 py-4 bg-slate-50 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 font-medium placeholder:text-slate-400 transition-all shadow-inner"
-                            placeholder="Enter ingredients (e.g., chicken, rice...)"
-                            value={pantryInput}
-                            onChange={(e) => setPantryInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateWithPreferences()}
-                        />
-                        <button
-                            onClick={handleGenerateWithPreferences}
-                            disabled={isGenerating || !pantryInput.trim()}
-                            className="absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-6 rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center gap-2 transition-all shadow-md"
-                        >
-                            {isGenerating ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-                        </button>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
