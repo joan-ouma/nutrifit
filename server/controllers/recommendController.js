@@ -8,276 +8,9 @@ const genAI = process.env.GEMINI_API_KEY
     ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
     : null;
 
-/**
- * Generate personalized recipe recommendations based on user's eating patterns
- */
-exports.getPersonalizedRecommendations = async (req, res, next) => {
-    try {
-        const userId = req.user._id || req.user.id;
-        const { mealType, date } = req.body;
-
-        // Get user profile
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Get recent meal history (last 7 days)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        
-        const recentMeals = await Meal.find({
-            userId,
-            date: { $gte: sevenDaysAgo }
-        }).sort({ date: -1 }).limit(50);
-
-        // Get recent daily logs
-        const recentLogs = await DailyLog.find({
-            userId,
-            date: { $gte: sevenDaysAgo }
-        }).sort({ date: -1 });
-
-        // Analyze eating patterns
-        const mealFrequency = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
-        const commonIngredients = {};
-        const avgCalories = recentLogs.length > 0 
-            ? recentLogs.reduce((sum, log) => sum + log.totalNutrition.calories, 0) / recentLogs.length 
-            : 0;
-        
-        recentMeals.forEach(meal => {
-            mealFrequency[meal.type] = (mealFrequency[meal.type] || 0) + 1;
-            meal.ingredients?.forEach(ing => {
-                const name = ing.name?.toLowerCase() || ing.toLowerCase();
-                commonIngredients[name] = (commonIngredients[name] || 0) + 1;
-            });
-        });
-
-        // Get today's nutrition if date provided
-        let todayNutrition = null;
-        if (date) {
-            const targetDate = new Date(date);
-            targetDate.setHours(0, 0, 0, 0);
-            const todayLog = await DailyLog.findOne({ userId, date: targetDate });
-            if (todayLog) {
-                todayNutrition = todayLog.totalNutrition;
-            }
-        }
-
-        // Calculate remaining calories for today
-        const calorieGoal = user.calorieGoal || 2000;
-        const remainingCalories = todayNutrition 
-            ? Math.max(0, calorieGoal - todayNutrition.calories)
-            : calorieGoal;
-
-        // Get top ingredients
-        const topIngredients = Object.entries(commonIngredients)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10)
-            .map(([name]) => name);
-
-        // Build recommendation prompt
-        const prompt = buildRecommendationPrompt({
-            user,
-            mealType: mealType || 'balanced',
-            remainingCalories,
-            avgCalories,
-            mealFrequency,
-            topIngredients,
-            todayNutrition,
-            dietaryRestrictions: user.dietaryRestrictions || [],
-            allergies: user.allergies || [],
-            goals: user.goals
-        });
-
-        // Generate recommendations
-        let recommendations = [];
-        
-        if (genAI) {
-            try {
-                const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-                const result = await model.generateContent(prompt);
-                const response = await result.response;
-                const text = response.text();
-
-                // Parse JSON from response
-                const jsonMatch = text.match(/\[[\s\S]*\]/);
-                if (jsonMatch) {
-                    recommendations = JSON.parse(jsonMatch[0]);
-                }
-            } catch (error) {
-                console.error('Gemini API error:', error);
-            }
-        }
-
-        // Fallback recommendations if AI fails
-        if (recommendations.length === 0) {
-            recommendations = generateFallbackRecommendations({
-                mealType,
-                remainingCalories,
-                topIngredients,
-                user
-            });
-        }
-
-        // Add personalized insights
-        const insights = generateInsights({
-            mealFrequency,
-            avgCalories,
-            calorieGoal,
-            todayNutrition,
-            remainingCalories
-        });
-
-        res.json({
-            success: true,
-            recommendations,
-            insights,
-            userContext: {
-                calorieGoal,
-                remainingCalories,
-                avgDailyCalories: Math.round(avgCalories),
-                topIngredients: topIngredients.slice(0, 5)
-            }
-        });
-
-    } catch (error) {
-        next(error);
-    }
-};
-
-/**
- * Build recommendation prompt for AI
- */
-function buildRecommendationPrompt({ user, mealType, remainingCalories, avgCalories, mealFrequency, topIngredients, todayNutrition, dietaryRestrictions, allergies, goals }) {
-    return `You are a professional nutritionist and chef. Generate detailed step by step instructions for a personalized recipe recommendations.Do not use vague steps like "Cook chicken" instead use specific steps like "Cut the chicken into small pieces" and "Cook the chicken until it is fully cooked". "Nutrition" values must only be numbers and not strings like "kcal" or "g".
-
-USER CONTEXT:
-- Calorie Goal: ${user.calorieGoal || 2000} calories/day
-- Remaining Calories Today: ${remainingCalories} calories
-- Average Daily Calories (last 7 days): ${Math.round(avgCalories)} calories
-- Dietary Goal: ${goals || 'balanced'}
-- Dietary Restrictions: ${dietaryRestrictions.join(', ') || 'none'}
-- Allergies: ${allergies.join(', ') || 'none'}
-- Most Used Ingredients: ${topIngredients.join(', ') || 'none'}
-- Meal Frequency: Breakfast ${mealFrequency.breakfast}x, Lunch ${mealFrequency.lunch}x, Dinner ${mealFrequency.dinner}x, Snacks ${mealFrequency.snack}x
-
-${todayNutrition ? `TODAY'S NUTRITION SO FAR:
-- Calories: ${todayNutrition.calories}/${user.calorieGoal || 2000}
-- Protein: ${Math.round(todayNutrition.protein)}g
-- Carbs: ${Math.round(todayNutrition.carbs)}g
-- Fats: ${Math.round(todayNutrition.fats)}g` : ''}
-
-RECOMMENDATION REQUIREMENTS:
-1. Recipes should fit within ${remainingCalories} remaining calories
-2. Consider user's eating patterns and preferences
-3. Suggest recipes that complement their current nutrition
-4. Use ingredients they commonly use when possible
-5. Respect dietary restrictions and allergies
-6. Align with their ${goals} goal
-
-For each recipe, provide JSON format:
-{
-    "name": "Recipe Name",
-    "type": "${mealType || 'balanced'}",
-    "ingredients": ["ingredient1", "ingredient2"],
-    "instructions": ["step1", "step2"],
-    "nutrition": {
-        "calories": 400,
-        "protein": 25,
-        "carbs": 45,
-        "fats": 12,
-        "fiber": 5,
-        "sugar": 8,
-        "sodium": 600
-    },
-    "time": "30 min",
-    "servingSize": "1 serving",
-    "costPerServing": "$5",
-    "matchScore": 90,
-    "whyItWorks": "Explanation of why this fits their needs",
-    "missingIngredients": ["item1"],
-    "image": "food image URL"
-}
-
-Return as JSON array.`;
-}
-
-/**
- * Generate fallback recommendations when AI is unavailable
- */
-function generateFallbackRecommendations({ mealType, remainingCalories, topIngredients, user }) {
-    const calorieTarget = Math.min(remainingCalories, 600);
-    
-    return [
-        {
-            name: 'Balanced Power Bowl',
-            type: mealType || 'balanced',
-            ingredients: topIngredients.slice(0, 5).concat(['quinoa', 'mixed greens', 'olive oil']),
-            instructions: [
-                'Cook quinoa according to package directions',
-                'Prepare vegetables and protein',
-                'Arrange in a bowl with greens',
-                'Drizzle with dressing and serve'
-            ],
-            nutrition: {
-                calories: Math.round(calorieTarget * 0.9),
-                protein: Math.round(calorieTarget * 0.25 / 4),
-                carbs: Math.round(calorieTarget * 0.4 / 4),
-                fats: Math.round(calorieTarget * 0.35 / 9),
-                fiber: 8,
-                sugar: 5,
-                sodium: 400
-            },
-            time: '25 min',
-            servingSize: '1 bowl',
-            costPerServing: '$6',
-            matchScore: 85,
-            whyItWorks: 'Balanced macros that fit your remaining calorie budget',
-            missingIngredients: [],
-            image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800'
-        }
-    ];
-}
-
-/**
- * Generate personalized insights
- */
-function generateInsights({ mealFrequency, avgCalories, calorieGoal, todayNutrition, remainingCalories }) {
-    const insights = [];
-
-    if (avgCalories < calorieGoal * 0.85) {
-        insights.push({
-            type: 'calorie',
-            message: `You're averaging ${Math.round(avgCalories)} calories per day. Consider adding nutrient-dense meals to reach your goal.`,
-            priority: 'medium'
-        });
-    }
-
-    if (mealFrequency.snack < mealFrequency.breakfast) {
-        insights.push({
-            type: 'pattern',
-            message: 'You tend to eat more breakfasts than snacks. Healthy snacks can help maintain energy throughout the day.',
-            priority: 'low'
-        });
-    }
-
-    if (remainingCalories < 300 && todayNutrition) {
-        insights.push({
-            type: 'calorie',
-            message: `You have ${remainingCalories} calories remaining. Consider lighter meal options or a healthy snack.`,
-            priority: 'high'
-        });
-    }
-
-    return insights;
-}
-
-/**
- * Generate recipes based on pantry (original functionality)
- */
-/**
- * Generate recipes based on pantry ingredients
- */
+// ==========================================
+// 1. GENERATE RECIPES (The AI Chef)
+// ==========================================
 exports.generateRecipes = async (req, res, next) => {
     try {
         const { 
@@ -287,25 +20,26 @@ exports.generateRecipes = async (req, res, next) => {
             cuisine = 'any',
             mealType = 'any',
             dietaryRestrictions = [],
-            maxCalories,
-            maxPrepTime
+            maxCalories
         } = req.body;
         
-        // 1. Validation
+        // --- VALIDATION ---
         if (!pantry || !pantry.trim()) {
             return res.status(400).json({ success: false, error: 'Pantry ingredients are required' });
         }
 
-        // 2. CHECK API KEY
+        // --- CHECK API KEY ---
         if (!genAI) {
-            console.error("ERROR: GEMINI_API_KEY is missing in .env file");
-            return res.status(500).json({ success: false, error: "Server Error: API Key missing" });
+            console.error("CRITICAL ERROR: GEMINI_API_KEY is missing in .env file");
+            return res.status(500).json({ 
+                success: false, 
+                error: "Server Error: Gemini API Key is missing. Check backend logs." 
+            });
         }
 
-        // 3. FIX: Add the 'pantry' ingredients to the prompt!
-        // (You missed this in your previous code, so the AI didn't know what to cook)
+        // --- THE MICHELIN STAR PROMPT ---
         const prompt = `
-            You are a professional Michelin-star chef. Create 2 detailed recipes using these ingredients: ${pantry}.
+            You are a professional Michelin-star chef. Create 2 detailed, gourmet recipes using these ingredients: ${pantry}.
             
             User Preferences:
             - Goal: ${userGoal}
@@ -317,15 +51,16 @@ exports.generateRecipes = async (req, res, next) => {
 
             CRITICAL INSTRUCTIONS:
             1. Use the provided ingredients (${pantry}) as the main components.
-            2. "instructions" must be an array of at least 6 detailed steps.
-            3. "nutrition" values must be NUMBERS ONLY (no "kcal", "g"). 
-            4. If the cuisine is "Kenyan", suggest authentic dishes like Ugali, Sukuma Wiki, or Nyama Choma if ingredients allow.
+            2. INSTRUCTIONS MUST BE DETAILED: Do NOT write "Cook chicken". Write "Sear the chicken on medium-high heat for 6 minutes per side until golden brown."
+            3. Provide at least 6 steps in the instructions.
+            4. NUTRITION: Values must be NUMBERS ONLY. Do not write "500 kcal", just write 500.
+            5. KENYAN CUISINE: If cuisine is 'Kenyan', suggest authentic dishes (Ugali, Sukuma Wiki, Nyama Choma, Chapati, etc.) if ingredients allow.
 
-            Return ONLY valid JSON array:
+            Return ONLY a valid JSON array matching this structure:
             [{
-                "name": "Recipe Name",
+                "name": "Creative Recipe Name",
                 "ingredients": ["list", "of", "ingredients"],
-                "instructions": ["Step 1...", "Step 2..."],
+                "instructions": ["Step 1...", "Step 2...", "Step 3...", "Step 4...", "Step 5...", "Step 6..."],
                 "nutrition": { "calories": 500, "protein": 30, "carbs": 50, "fats": 15 },
                 "time": "30 min",
                 "matchScore": 95,
@@ -342,7 +77,7 @@ exports.generateRecipes = async (req, res, next) => {
             const response = await result.response;
             const text = response.text();
 
-            // Clean the text (sometimes AI adds markdown backticks)
+            // Clean the text (remove markdown backticks if AI adds them)
             const jsonStr = text.replace(/```json|```/g, '').trim();
             
             // Extract JSON array
@@ -356,21 +91,111 @@ exports.generateRecipes = async (req, res, next) => {
 
         } catch (error) {
             console.error('Gemini API Error:', error);
-            // 4. FIX: Send the ACTUAL error to frontend for debugging
-            // Once your app is stable, you can revert to the fallback logic.
+            // STOP! Do not send Pasta. Send the real error so we can fix it.
             return res.status(500).json({ 
                 success: false, 
-                error: `AI Error: ${error.message}` 
+                error: `AI Generation Failed: ${error.message}` 
             });
         }
 
+        // Send the real recipes
         res.json({
             success: true,
             data: recipes
         });
 
     } catch (error) {
-        console.error("Server Error:", error);
+        console.error("Server Controller Error:", error);
         next(error);
     }
 };
+
+// ==========================================
+// 2. PERSONALIZED RECOMMENDATIONS (Context Aware)
+// ==========================================
+exports.getPersonalizedRecommendations = async (req, res, next) => {
+    try {
+        const userId = req.user._id || req.user.id;
+        const { mealType, date } = req.body;
+
+        // Get user profile
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Get recent history
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        const recentLogs = await DailyLog.find({ userId, date: { $gte: sevenDaysAgo } }).sort({ date: -1 });
+
+        // Calculate Stats
+        const avgCalories = recentLogs.length > 0 
+            ? recentLogs.reduce((sum, log) => sum + log.totalNutrition.calories, 0) / recentLogs.length 
+            : 0;
+        
+        let todayNutrition = null;
+        if (date) {
+            const targetDate = new Date(date);
+            targetDate.setHours(0, 0, 0, 0);
+            const todayLog = await DailyLog.findOne({ userId, date: targetDate });
+            if (todayLog) todayNutrition = todayLog.totalNutrition;
+        }
+
+        const calorieGoal = user.calorieGoal || 2000;
+        const remainingCalories = todayNutrition 
+            ? Math.max(0, calorieGoal - todayNutrition.calories)
+            : calorieGoal;
+
+        // Simple prompt for personalized (simplified for stability)
+        const prompt = `
+            Act as a nutritionist. Suggest 1 meal for a user.
+            Goal: ${user.goals}, Remaining Cals: ${remainingCalories}, Type: ${mealType}.
+            Return JSON: [{ "name": "...", "instructions": [], "nutrition": {...} }]
+        `;
+
+        // Generate
+        let recommendations = [];
+        if (genAI) {
+            try {
+                const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+                const result = await model.generateContent(prompt);
+                const text = result.response.text();
+                const jsonMatch = text.match(/\[[\s\S]*\]/);
+                if (jsonMatch) recommendations = JSON.parse(jsonMatch[0]);
+            } catch (e) { console.error(e); }
+        }
+
+        // Fallback (Only for personalized, NOT for the main chef)
+        if (recommendations.length === 0) {
+            recommendations = generateFallbackRecommendations({ mealType, remainingCalories });
+        }
+
+        res.json({
+            success: true,
+            recommendations,
+            userContext: { calorieGoal, remainingCalories }
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ==========================================
+// 3. HELPER FUNCTIONS
+// ==========================================
+
+function generateFallbackRecommendations({ mealType, remainingCalories }) {
+    // Only used for the "Personalized" tab, not the main "AI Chef"
+    return [{
+        name: 'Balanced Power Bowl',
+        type: mealType || 'balanced',
+        ingredients: ['quinoa', 'mixed greens', 'chickpeas', 'avocado'],
+        instructions: ['Combine all ingredients in a bowl', 'Dress with olive oil and lemon'],
+        nutrition: { calories: 450, protein: 15, carbs: 55, fats: 20 },
+        time: '15 min',
+        matchScore: 80
+    }];
+}
+
+function generateInsights() { return []; } // Placeholder if needed
