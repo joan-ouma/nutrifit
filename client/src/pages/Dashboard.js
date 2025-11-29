@@ -514,14 +514,22 @@ export default function Dashboard() {
     const handleGenerateRecipes = async (preferences = {}) => {
         if (!pantryInput.trim()) return;
         setIsGenerating(true);
+        setAiRecipes([]); // Clear previous results
         try {
             const token = localStorage.getItem('token');
-        const config = {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`  // 👈 REQUIRED
+            if (!token) {
+                alert('Please log in to generate recipes');
+                setIsGenerating(false);
+                return;
             }
-        };
+            
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+            
             const res = await axios.post(`${API_URL}/recommend`, {
                 pantry: pantryInput,
                 userGoal: user.goals || 'balanced',
@@ -532,10 +540,31 @@ export default function Dashboard() {
                 maxCalories: preferences.maxCalories || null,
                 maxPrepTime: preferences.maxPrepTime || null
             }, config);
-            if (res.data.success) setAiRecipes(res.data.data);
+            
+            if (res.data.success && res.data.data) {
+                setAiRecipes(res.data.data);
+            } else {
+                console.error('Unexpected response format:', res.data);
+                alert('Received unexpected response from server. Please try again.');
+            }
         } catch (err) {
             console.error("Full Error:", err);
-            alert(err.response?.data?.error || "Chef is busy right now. Check server logs.");
+            console.error("Error Response:", err.response?.data);
+            console.error("Error Status:", err.response?.status);
+            console.error("API URL:", `${API_URL}/recommend`);
+            
+            if (err.response?.status === 404) {
+                alert(`API endpoint not found. Please check if the server is running at ${API_URL}`);
+            } else if (err.response?.status === 401) {
+                alert('Authentication failed. Please log in again.');
+                localStorage.removeItem('token');
+                navigate('/');
+            } else if (err.response?.data?.error) {
+                alert(err.response.data.error);
+            } else {
+                alert(`Failed to generate recipes: ${err.message || 'Unknown error'}`);
+            }
+            setAiRecipes([]); // Clear recipes on error
         } finally {
             setIsGenerating(false);
         }
