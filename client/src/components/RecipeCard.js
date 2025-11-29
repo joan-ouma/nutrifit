@@ -10,42 +10,36 @@ export default function RecipeCard({ recipe, onMealAdded }) {
         setIsAdding(true);
         try {
             const nutrition = recipe.nutrition || {};
-            // Convert string values to numbers if needed
-            const calories = typeof nutrition.calories === 'string' 
-                ? parseInt(nutrition.calories) || 0 
-                : nutrition.calories || 0;
             
-            const protein = typeof nutrition.protein === 'string'
-                ? parseFloat(nutrition.protein.replace('g', '')) || 0
-                : nutrition.protein || 0;
-            
-            const carbs = typeof nutrition.carbs === 'string'
-                ? parseFloat(nutrition.carbs.replace('g', '')) || 0
-                : nutrition.carbs || 0;
-            
-            const fats = typeof nutrition.fats === 'string'
-                ? parseFloat(nutrition.fats.replace('g', '')) || 0
-                : nutrition.fats || 0;
+            // HELPER: Extract numbers safely from strings like "approx 20g" or "20"
+            const parseNum = (val) => {
+                if (typeof val === 'number') return val;
+                if (!val) return 0;
+                // Regex matches the first number found in the string
+                const match = val.toString().match(/(\d+(\.\d+)?)/); 
+                return match ? parseFloat(match[0]) : 0;
+            };
 
             await logMeal({
                 name: recipe.name,
                 type: mealType,
                 date: new Date().toISOString().split('T')[0],
                 nutrition: {
-                    calories,
-                    protein,
-                    carbs,
-                    fats
+                    calories: parseNum(nutrition.calories),
+                    protein: parseNum(nutrition.protein),
+                    carbs: parseNum(nutrition.carbs),
+                    fats: parseNum(nutrition.fats)
                 },
                 ingredients: recipe.ingredients || [],
                 servingSize: recipe.servingSize || '1 serving',
-                notes: `Added from recipe: ${recipe.name}`
+                notes: `Added from AI Chef: ${recipe.name}`
             });
             
             if (onMealAdded) onMealAdded();
             alert('Meal added successfully!');
         } catch (error) {
-            alert('Failed to add meal. Please try again.');
+            console.error("Add meal error:", error); // Check console for real error
+            alert('Failed to add meal. Check console for details.');
         } finally {
             setIsAdding(false);
         }
