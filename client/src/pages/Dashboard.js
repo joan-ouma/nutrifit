@@ -511,12 +511,16 @@ export default function Dashboard() {
 
     const fetchTrending = async () => {
         try {
-            const res = await axios.get(`${API_URL}/recipes/trending`);
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/recipes/trending`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             if (res.data.success) setTrendingRecipes(res.data.data);
         } catch (err) {
             console.log("Trending fetch error", err);
         }
     };
+    
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -528,15 +532,24 @@ export default function Dashboard() {
         try {
             setUser(updatedData);
             localStorage.setItem('nutrifit_user', JSON.stringify(updatedData));
-
-            const res = await axios.post(`${API_URL}/user/profile`, updatedData);
+    
+            const token = localStorage.getItem('token');
+            const res = await axios.post(`${API_URL}/user/profile`, updatedData, {
+                headers: { 
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            
             if (res.data.success && showToast) {
                 alert("Saved!");
             }
         } catch (err) {
-            alert("Failed to save changes");
+            console.error("Profile update error:", err);
+            alert(err.response?.data?.message || "Failed to save changes");
         }
     };
+    
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -554,6 +567,13 @@ export default function Dashboard() {
         if (!pantryInput.trim()) return;
         setIsGenerating(true);
         try {
+            const token = localStorage.getItem('token');
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`  // 👈 REQUIRED
+            }
+        };
             const res = await axios.post(`${API_URL}/recommend`, {
                 pantry: pantryInput,
                 userGoal: user.goals || 'balanced',
@@ -563,7 +583,7 @@ export default function Dashboard() {
                 dietaryRestrictions: preferences.dietaryRestrictions || [],
                 maxCalories: preferences.maxCalories || null,
                 maxPrepTime: preferences.maxPrepTime || null
-            });
+            }, config);
             if (res.data.success) setAiRecipes(res.data.data);
         } catch (err) {
             console.error("Full Error:", err);
