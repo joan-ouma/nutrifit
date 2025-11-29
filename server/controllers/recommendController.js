@@ -149,7 +149,7 @@ exports.getPersonalizedRecommendations = async (req, res, next) => {
  * Build recommendation prompt for AI
  */
 function buildRecommendationPrompt({ user, mealType, remainingCalories, avgCalories, mealFrequency, topIngredients, todayNutrition, dietaryRestrictions, allergies, goals }) {
-    return `You are a professional nutritionist and chef. Generate 3-5 personalized recipe recommendations.
+    return `You are a professional nutritionist and chef. Generate detailed step by step instructions for a personalized recipe recommendations.Do not use vague steps like "Cook chicken" instead use specific steps like "Cut the chicken into small pieces" and "Cook the chicken until it is fully cooked". "Nutrition" values must only be numbers and not strings like "kcal" or "g".
 
 USER CONTEXT:
 - Calorie Goal: ${user.calorieGoal || 2000} calories/day
@@ -275,6 +275,9 @@ function generateInsights({ mealFrequency, avgCalories, calorieGoal, todayNutrit
 /**
  * Generate recipes based on pantry (original functionality)
  */
+/**
+ * Generate recipes based on pantry ingredients
+ */
 exports.generateRecipes = async (req, res, next) => {
     try {
         const { 
@@ -287,112 +290,87 @@ exports.generateRecipes = async (req, res, next) => {
             maxCalories,
             maxPrepTime
         } = req.body;
-        const userId = req.user?._id || req.user?.id;
-
+        
+        // 1. Validation
         if (!pantry || !pantry.trim()) {
-            return res.status(400).json({
-                success: false,
-                error: 'Pantry ingredients are required'
-            });
+            return res.status(400).json({ success: false, error: 'Pantry ingredients are required' });
         }
 
-        // Get user preferences if authenticated
-        let user = null;
-        if (userId) {
-            user = await User.findById(userId);
+        // 2. CHECK API KEY
+        if (!genAI) {
+            console.error("ERROR: GEMINI_API_KEY is missing in .env file");
+            return res.status(500).json({ success: false, error: "Server Error: API Key missing" });
         }
 
-        const prompt = `You are a professional chef. Create 3 detailed recipes based on these ingredients: ${pantry}. 
-        User goal: ${userGoal}, Budget: ${budget}.
-        ${cuisine !== 'any' ? `Cuisine preference: ${cuisine}` : ''}
-        ${mealType !== 'any' ? `Meal type: ${mealType}` : ''}
-        ${maxCalories ? `Maximum calories per serving: ${maxCalories}` : ''}
-        ${maxPrepTime ? `Maximum preparation time: ${maxPrepTime} minutes` : ''}
-        ${dietaryRestrictions.length > 0 ? `Dietary restrictions: ${dietaryRestrictions.join(', ')}` : ''}
-        ${user?.dietaryRestrictions?.length ? `Additional dietary restrictions: ${user.dietaryRestrictions.join(', ')}` : ''}
-        ${user?.allergies?.length ? `Allergies to avoid: ${user.allergies.join(', ')}` : ''}
-        
-        For each recipe, provide:
-        1. Recipe name
-        2. List of ingredients (use what's available, note missing ingredients)
-        3. Step-by-step instructions
-        4. Estimated calories, protein (grams), carbs (grams), fats (grams), fiber (grams), sugar (grams), sodium (mg)
-        5. Cooking time
-        6. Cost per serving
-        7. Why this recipe works for the user's goal
-        8. Match score (0-100)
-        
-        Format as JSON array with this structure:
-        [{
-            "name": "Recipe Name",
-            "ingredients": ["ingredient1", "ingredient2"],
-            "instructions": ["step1", "step2"],
-            "nutrition": {"calories": 400, "protein": 20, "carbs": 50, "fats": 10, "fiber": 5, "sugar": 8, "sodium": 600},
-            "time": "30 min",
-            "servingSize": "1 serving",
-            "costPerServing": "$5",
-            "matchScore": 90,
-            "whyItWorks": "Explanation",
-            "missingIngredients": ["item1", "item2"],
-            "image": "food image URL"
-        }]`;
+        // 3. FIX: Add the 'pantry' ingredients to the prompt!
+        // (You missed this in your previous code, so the AI didn't know what to cook)
+        const prompt = `
+            You are a professional Michelin-star chef. Create 2 detailed recipes using these ingredients: ${pantry}.
+            
+            User Preferences:
+            - Goal: ${userGoal}
+            - Budget: ${budget}
+            - Cuisine: ${cuisine}
+            - Meal Type: ${mealType}
+            ${maxCalories ? `- Max Calories: ${maxCalories}` : ''}
+            ${dietaryRestrictions.length ? `- Restrictions: ${dietaryRestrictions.join(', ')}` : ''}
+
+            CRITICAL INSTRUCTIONS:
+            1. Use the provided ingredients (${pantry}) as the main components.
+            2. "instructions" must be an array of at least 6 detailed steps.
+            3. "nutrition" values must be NUMBERS ONLY (no "kcal", "g"). 
+            4. If the cuisine is "Kenyan", suggest authentic dishes like Ugali, Sukuma Wiki, or Nyama Choma if ingredients allow.
+
+            Return ONLY valid JSON array:
+            [{
+                "name": "Recipe Name",
+                "ingredients": ["list", "of", "ingredients"],
+                "instructions": ["Step 1...", "Step 2..."],
+                "nutrition": { "calories": 500, "protein": 30, "carbs": 50, "fats": 15 },
+                "time": "30 min",
+                "matchScore": 95,
+                "whyItWorks": "Why this fits...",
+                "missingIngredients": ["optional missing items"]
+            }]
+        `;
 
         let recipes = [];
 
-        if (genAI) {
-            try {
-                const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-                const result = await model.generateContent(prompt);
-                const response = await result.response;
-                const text = response.text();
+        try {
+            const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
 
-                const jsonMatch = text.match(/\[[\s\S]*\]/);
-                if (jsonMatch) {
-                    recipes = JSON.parse(jsonMatch[0]);
-                }
-            } catch (error) {
-                console.error('Gemini API error:', error);
+            // Clean the text (sometimes AI adds markdown backticks)
+            const jsonStr = text.replace(/```json|```/g, '').trim();
+            
+            // Extract JSON array
+            const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
+            
+            if (jsonMatch) {
+                recipes = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error("Invalid JSON format received from AI");
             }
-        }
 
-        if (recipes.length === 0) {
-            recipes = [
-                {
-                    name: 'Quick Pantry Pasta',
-                    ingredients: pantry.split(',').map(i => i.trim()),
-                    instructions: [
-                        'Boil pasta according to package directions',
-                        'Heat olive oil in a pan',
-                        'Add ingredients and cook for 5 minutes',
-                        'Combine with pasta and serve'
-                    ],
-                    nutrition: {
-                        calories: 450,
-                        protein: 15,
-                        carbs: 60,
-                        fats: 12,
-                        fiber: 3,
-                        sugar: 5,
-                        sodium: 500
-                    },
-                    time: '20 min',
-                    servingSize: '1 serving',
-                    costPerServing: '$4',
-                    matchScore: 85,
-                    whyItWorks: 'Uses all your pantry ingredients efficiently',
-                    missingIngredients: [],
-                    image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800'
-                }
-            ];
+        } catch (error) {
+            console.error('Gemini API Error:', error);
+            // 4. FIX: Send the ACTUAL error to frontend for debugging
+            // Once your app is stable, you can revert to the fallback logic.
+            return res.status(500).json({ 
+                success: false, 
+                error: `AI Error: ${error.message}` 
+            });
         }
 
         res.json({
             success: true,
-            data: Array.isArray(recipes) ? recipes : [recipes]
+            data: recipes
         });
 
     } catch (error) {
+        console.error("Server Error:", error);
         next(error);
     }
 };
-
