@@ -1,87 +1,137 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     LayoutDashboard, ChefHat, ShoppingBag, User, LogOut, Search, Bell,
-    Menu, X, Loader2, Flame, Star, Camera, Save, Plus, Trash2, Sparkles, 
-    Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle 
+    Menu, X, Loader2, Flame,Camera, Save, Plus, Trash2, Sparkles, 
+    Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle
 } from 'lucide-react';
-
-import { logMeal } from '../api';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from 'axios'; 
+import { API_URL, logMeal } from '../api';
+
+// Components
 import RecipeCard from '../components/RecipeCard';
 import NutritionDashboard from './NutritionDashboard';
 import GroceryList from '../components/GroceryList';
 import Leaderboard from '../components/Leaderboard';
-import API_URL from '../config';
+
 
 // --- SUB-COMPONENTS ---
 
+// --- TOAST NOTIFICATION COMPONENT ---
+const Toast = ({ message, type, onClose }) => {
+    useEffect(() => {
+        const timer = setTimeout(onClose, 3000); // Auto-hide after 3 seconds
+        return () => clearTimeout(timer);
+    }, [onClose]);
 
-const OverviewTab = ({ user, setActiveTab }) => {
+    return (
+        <div className={`
+            fixed bottom-6 right-6 z-50 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-500 animate-slideUp
+            ${type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-slate-900 text-white border border-slate-700'}
+        `}>
+            {type === 'error' ? <X size={20} /> : <CheckCircle size={20} className="text-emerald-400" />}
+            <div>
+                <p className="font-bold text-sm">{type === 'error' ? 'Error' : 'Success'}</p>
+                <p className="text-xs opacity-90">{message}</p>
+            </div>
+            <button onClick={onClose} className="ml-4 opacity-50 hover:opacity-100"><X size={14} /></button>
+        </div>
+    );
+};
+
+// --- UPDATED OVERVIEW TAB (Coffee = Hydration) ---
+const OverviewTab = ({ user, setActiveTab, showToast }) => {
     // 1. Time Logic
     const hour = new Date().getHours();
     const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
     const nextMeal = hour < 11 ? 'Breakfast' : hour < 15 ? 'Lunch' : hour < 20 ? 'Dinner' : 'Snack';
     const streakDays = user.streak || 1;
 
-    // 2. Stats State (For the Fuel Gauge)
+    // 2. Stats State
     const [todayStats, setTodayStats] = useState({ calories: 0, goal: user.calorieGoal || 2000 });
-    const [loading, setLoading] = useState(true);
-    
-    // 3. Quick Add Loading State
+    const [waterStats, setWaterStats] = useState({ current: 0, goal: user.waterGoal || 2500 });
     const [addingItem, setAddingItem] = useState(null);
 
-    // 4. Fetch Data on Load
+    // 3. Fetch Data on Load
     useEffect(() => {
-        const fetchStats = async () => {
+        const fetchData = async () => {
             try {
                 const token = localStorage.getItem('token');
                 const today = new Date().toISOString().split('T')[0];
-                const res = await axios.get(`${API_URL}/meals/date/${today}`, {
+                
+                // Get Meals
+                const resMeals = await axios.get(`${API_URL}/meals/date/${today}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                
-                const meals = res.data.meals || [];
+                const meals = resMeals.data.meals || [];
                 const totalCals = meals.reduce((sum, m) => sum + (m.nutrition?.calories || 0), 0);
                 
+                // Get Water
+                const resWater = await axios.get(`${API_URL}/water?startDate=${today}&endDate=${today}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const totalWater = resWater.data.summary?.totalWater || 0;
+
                 setTodayStats({ calories: totalCals, goal: user.calorieGoal || 2000 });
+                setWaterStats({ current: totalWater, goal: user.waterGoal || 2500 });
+
             } catch (err) {
                 console.error("Stats error", err);
-            } finally {
-                setLoading(false);
             }
         };
-        fetchStats();
-    }, [user.calorieGoal]);
+        fetchData();
+    }, [user]);
 
-    // 5. FUNCTION: Handle Quick Add Buttons
+    // 4. ✅ SMART QUICK ADD (Updated Logic)
     const handleQuickAdd = async (item) => {
-        setAddingItem(item.name); // Start loading spinner on specific button
+        setAddingItem(item.name); 
         try {
-            await logMeal({
-                name: item.name,
-                type: 'snack', // Defaulting quick adds to 'snack'
-                date: new Date().toISOString().split('T')[0],
-                nutrition: { 
-                    calories: item.cal, 
-                    protein: 0, carbs: 0, fats: 0 // Simple log
-                },
-                servingSize: '1 portion',
-                notes: 'Quick add from Dashboard'
-            });
+            const token = localStorage.getItem('token');
+            const today = new Date().toISOString().split('T')[0];
 
-            // Update UI immediately (Fuel Gauge)
-            setTodayStats(prev => ({ ...prev, calories: prev.calories + item.cal }));
+            // --- BRANCH A: HYDRATION (Water & Coffee) ---
+            // Checks for "water" OR "coffee" to log as hydration
+            if (item.name.toLowerCase().includes('water') || item.name.toLowerCase().includes('coffee')) {
+                await axios.post(`${API_URL}/water/log`, 
+                    { amount: 250, date: today }, // Logs 250ml per click
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                
+                // Update Blue Tracker instantly
+                setWaterStats(prev => ({ ...prev, current: prev.current + 250 }));
+                
+                if (showToast) showToast(`Hydration logged! +250ml`, "success");
+            } 
+            // --- BRANCH B: FOOD (Everything else) ---
+            else {
+                await logMeal({
+                    name: item.name,
+                    type: 'snack',
+                    date: today,
+                    nutrition: { 
+                        calories: item.cal, 
+                        protein: 0, carbs: 0, fats: 0 
+                    },
+                    servingSize: '1 portion',
+                    notes: 'Quick add from Dashboard'
+                });
+                
+                // Update Fuel Gauge instantly
+                setTodayStats(prev => ({ ...prev, calories: prev.calories + item.cal }));
+                
+                if (showToast) showToast(`${item.name} logged as snack!`, "success");
+            }
             
         } catch (error) {
-            alert("Failed to log item. Check connection.");
+            if (showToast) showToast("Failed to log item. Check connection.", "error");
         } finally {
-            setAddingItem(null); // Stop loading
+            setAddingItem(null); 
         }
     };
 
-    // Calculate Percentage for Fuel Gauge
-    const percent = Math.min((todayStats.calories / todayStats.goal) * 100, 100);
+    // Calculate Percentages
+    const fuelPercent = Math.min((todayStats.calories / todayStats.goal) * 100, 100);
+    const waterPercent = Math.min((waterStats.current / waterStats.goal) * 100, 100);
 
     return (
         <div className="space-y-8 animate-fadeIn pb-10 max-w-6xl mx-auto">
@@ -109,7 +159,7 @@ const OverviewTab = ({ user, setActiveTab }) => {
                         <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
                             <div 
                                 className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-1000 relative"
-                                style={{ width: `${percent}%` }}
+                                style={{ width: `${fuelPercent}%` }}
                             ></div>
                         </div>
                     </div>
@@ -126,27 +176,25 @@ const OverviewTab = ({ user, setActiveTab }) => {
                     </div>
                 </div>
 
-                {/* Background Decoration */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
             </div>
 
             {/* 2. SMART ACTIONS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
-                {/* A. AI Chef Prompt (Working Button) */}
+                {/* A. AI Chef Prompt */}
                 <div 
-                    onClick={() => setActiveTab('ai-chef')} // ✅ THIS SWITCHES TABS
+                    onClick={() => setActiveTab('ai-chef')} 
                     className="md:col-span-2 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center gap-6 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer"
                 >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                    
                     <div className="bg-emerald-100 p-4 rounded-full text-emerald-600 z-10">
                         <ChefHat size={32} />
                     </div>
                     <div className="flex-1 text-center sm:text-left z-10">
                         <h3 className="text-lg font-bold text-slate-900">Time for {nextMeal}?</h3>
                         <p className="text-slate-500 text-sm mb-4">
-                            Not sure what to cook? Let NutriFit Assistant check your pantry and suggest a perfect {user.goals} meal.
+                            Let NutriFit Assistant check your pantry and suggest a perfect {user.goals} meal.
                         </p>
                         <span className="text-emerald-600 text-sm font-bold flex items-center gap-2 justify-center sm:justify-start group-hover:gap-3 transition-all">
                             Generate {nextMeal} <ArrowRight size={16} />
@@ -154,36 +202,37 @@ const OverviewTab = ({ user, setActiveTab }) => {
                     </div>
                 </div>
 
-                {/* B. Manual Logging (Working Button) */}
+                {/* B. Water Quick Stat */}
                 <div 
-                    onClick={() => setActiveTab('nutrition')} // ✅ THIS SWITCHES TABS
+                    onClick={() => setActiveTab('nutrition')} 
                     className="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-200 flex flex-col justify-between cursor-pointer hover:bg-blue-700 transition-colors relative overflow-hidden group"
                 >
-                    <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
-                    
                     <div className="flex justify-between items-start z-10">
                         <div>
-                            <h3 className="font-bold text-lg">Log Manually</h3>
-                            <p className="text-blue-100 text-xs">Add items without AI</p>
+                            <h3 className="font-bold text-lg">Hydration</h3>
+                            <p className="text-blue-100 text-xs">Goal: {waterStats.goal}ml</p>
                         </div>
-                        <Plus size={24} className="bg-white/20 p-1 rounded-lg" />
+                        <Activity size={20} className="text-blue-200" />
                     </div>
                     <div className="z-10 mt-4">
-                        <div className="flex items-center gap-2 opacity-90 group-hover:opacity-100">
-                            <span className="text-sm font-bold">Track calories & macros</span>
-                            <ArrowRight size={14} />
+                        <div className="flex items-end gap-2 mb-2">
+                            <span className="text-4xl font-bold">{waterStats.current}</span>
+                            <span className="text-sm mb-1 opacity-80">ml</span>
+                        </div>
+                        <div className="w-full bg-black/10 h-2 rounded-full overflow-hidden">
+                            <div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${waterPercent}%` }}></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* 3. QUICK ADD (Working Buttons with API) */}
+            {/* 3. QUICK ADD */}
             <div>
                 <h3 className="text-lg font-bold text-slate-900 mb-4 px-2">Quick Add</h3>
                 <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar px-2">
                     {[
                         { name: 'Water (250ml)', icon: '💧', cal: 0 },
-                        { name: 'Coffee', icon: '☕', cal: 5 },
+                        { name: 'Coffee', icon: '☕', cal: 5 }, // Now behaves like Water!
                         { name: 'Banana', icon: '🍌', cal: 105 },
                         { name: 'Apple', icon: '🍎', cal: 95 },
                         { name: 'Protein Shake', icon: '🥤', cal: 180 },
@@ -191,12 +240,12 @@ const OverviewTab = ({ user, setActiveTab }) => {
                     ].map((item, idx) => (
                         <button 
                             key={idx}
-                            onClick={() => handleQuickAdd(item)} // ✅ THIS SAVES TO DB
+                            onClick={() => handleQuickAdd(item)}
                             disabled={addingItem !== null}
                             className="flex-shrink-0 bg-white border border-slate-100 p-4 rounded-2xl min-w-[140px] hover:border-emerald-500 hover:shadow-md transition-all text-left group relative"
                         >
                             {addingItem === item.name ? (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-2xl">
+                                <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-2xl z-20">
                                     <Loader2 className="animate-spin text-emerald-600" size={24} />
                                 </div>
                             ) : null}
@@ -395,36 +444,40 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
     );
 };
 
-// --- UPDATED PANTRY TAB (Self-Refreshing) ---
+// --- UPDATED PANTRY TAB (Professional & Functional) ---
 const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab, setPantryInput }) => {
     const [newItem, setNewItem] = useState('');
     const [selectedItems, setSelectedItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // ✅ NEW: Auto-Refresh Data when opening this tab
+    // Auto-Refresh Data (with Lint Fix)
     useEffect(() => {
+        let isMounted = true; 
+
         const refreshPantry = async () => {
             setIsLoading(true);
             try {
                 const token = localStorage.getItem('token');
-                // Fetch fresh user profile
                 const res = await axios.get(`${API_URL}/user/profile`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
-                // If server data is different from local prop, update it!
-                const serverPantry = res.data.data.pantry || [];
-                if (JSON.stringify(serverPantry) !== JSON.stringify(pantry)) {
+                if (isMounted) {
+                    const serverPantry = res.data.data.pantry || [];
                     setPantry(serverPantry);
                 }
             } catch (err) {
                 console.error("Failed to refresh pantry:", err);
             } finally {
-                setIsLoading(false);
+                if (isMounted) setIsLoading(false);
             }
         };
+
         refreshPantry();
-    }, []); // Runs once when tab opens
+
+        return () => { isMounted = false; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); 
 
     const addItem = () => {
         if (!newItem.trim()) return;
@@ -463,20 +516,38 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
 
     return (
         <div className="max-w-4xl mx-auto animate-fadeIn pb-10">
-            {/* Header */}
+            {/* --- PROFESSIONAL HEADER --- */}
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 mb-6 relative overflow-hidden">
                 <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
                         <div>
                             <h2 className="text-2xl font-bold text-slate-900">My Digital Pantry</h2>
-                            <p className="text-slate-500">Select items to cook with or remove.</p>
+                            <p className="text-slate-500">Manage your inventory.</p>
                         </div>
-                        <div className="bg-emerald-100 text-emerald-800 font-bold px-4 py-2 rounded-xl flex items-center gap-2">
-                            {isLoading ? <Loader2 size={18} className="animate-spin"/> : <ShoppingBag size={18} />}
-                            {pantry?.length || 0} Items
+                        
+                        {/* Status Badge */}
+                        <div className={`
+                            px-4 py-2 rounded-xl flex items-center gap-2 font-bold text-sm transition-all duration-300
+                            ${isLoading 
+                                ? 'bg-slate-100 text-slate-500' 
+                                : 'bg-emerald-100 text-emerald-800'
+                            }
+                        `}>
+                            {isLoading ? (
+                                <>
+                                    <Loader2 size={16} className="animate-spin" />
+                                    <span>Syncing...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <ShoppingBag size={18} />
+                                    <span>{pantry?.length || 0} Items</span>
+                                </>
+                            )}
                         </div>
                     </div>
 
+                    {/* Input Field */}
                     <div className="flex gap-3">
                         <div className="relative flex-1">
                             <input
@@ -490,14 +561,20 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
                                 <Plus size={20} />
                             </div>
                         </div>
-                        <button onClick={addItem} className="bg-slate-900 text-white px-8 rounded-2xl font-bold hover:bg-slate-800 transition-colors shadow-lg">
+                        <button 
+                            onClick={addItem} 
+                            disabled={!newItem.trim()}
+                            className="bg-slate-900 text-white px-8 rounded-2xl font-bold hover:bg-slate-800 transition-colors shadow-lg disabled:opacity-50"
+                        >
                             Add
                         </button>
                     </div>
                 </div>
+                {/* Decoration */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -mr-8 -mt-8"></div>
             </div>
 
-            {/* Actions Bar */}
+            {/* Actions Bar (Appears when items selected) */}
             {selectedItems.length > 0 && (
                 <div className="sticky top-4 z-20 mb-6 animate-slideDown">
                     <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-xl flex justify-between items-center mx-auto max-w-lg">
@@ -522,10 +599,12 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
 
             {/* Items Grid */}
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                {isLoading && pantry.length === 0 ? (
+                {isLoading && (!pantry || pantry.length === 0) ? (
                     <div className="text-center py-20 text-slate-400">Loading inventory...</div>
                 ) : (!pantry || pantry.length === 0) ? (
-                    <div className="text-center py-20 text-slate-400">Your pantry is empty.</div>
+                    <div className="text-center py-20 text-slate-400">
+                        Your pantry is empty. Add items or shop from Grocery list.
+                    </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {pantry.map((item, idx) => {
@@ -684,39 +763,26 @@ const ProfileTab = ({ user, handleUpdateProfile, handleImageUpload }) => {
 };
 
 // --- MAIN DASHBOARD ---
-
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState('overview');
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [user, setUser] = useState({ username: 'User', email: '', profileImage: null, pantry: [] });
-    const [trendingRecipes, setTrendingRecipes] = useState([]);
-
     const [pantryInput, setPantryInput] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [aiRecipes, setAiRecipes] = useState([]);
-    const [searchQuery, setSearchQuery] =	useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [toast, setToast] = useState(null); // ✅ NEW: Toast State
     const navigate = useNavigate();
+
+    // Helper for showing notifications
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+    };
 
     useEffect(() => {
         const storedUser = localStorage.getItem('nutrifit_user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-        fetchTrending();
+        if (storedUser) setUser(JSON.parse(storedUser));
     }, []);
-
-    const fetchTrending = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/recipes/trending`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.data.success) setTrendingRecipes(res.data.data);
-        } catch (err) {
-            console.log("Trending fetch error", err);
-        }
-    };
-    
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -724,28 +790,20 @@ export default function Dashboard() {
         navigate('/');
     };
 
-    const handleUpdateProfile = async (updatedData, showToast = true) => {
+    const handleUpdateProfile = async (updatedData, showSuccess = true) => {
         try {
             setUser(updatedData);
             localStorage.setItem('nutrifit_user', JSON.stringify(updatedData));
-    
             const token = localStorage.getItem('token');
             const res = await axios.post(`${API_URL}/user/profile`, updatedData, {
-                headers: { 
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                }
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
             });
-            
-            if (res.data.success && showToast) {
-                alert("Saved!");
-            }
-        } catch (err) {
-            console.error("Profile update error:", err);
-            alert(err.response?.data?.message || "Failed to save changes");
+            if (res.data.success && showSuccess) showToast("Saved!", "success");
+        } catch (err) { 
+            console.error("Profile update error:", err); 
+            showToast(err.response?.data?.message || "Failed to save changes", "error"); 
         }
     };
-    
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -762,21 +820,10 @@ export default function Dashboard() {
     const handleGenerateRecipes = async (preferences = {}) => {
         if (!pantryInput.trim()) return;
         setIsGenerating(true);
-        setAiRecipes([]); // Clear previous results
+        setAiRecipes([]); 
         try {
             const token = localStorage.getItem('token');
-            if (!token) {
-                alert('Please log in to generate recipes');
-                setIsGenerating(false);
-                return;
-            }
-            
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            };
+            if (!token) { showToast('Please log in', 'error'); setIsGenerating(false); return; }
             
             const res = await axios.post(`${API_URL}/recommend`, {
                 pantry: pantryInput,
@@ -785,37 +832,12 @@ export default function Dashboard() {
                 cuisine: preferences.cuisine || 'any',
                 mealType: preferences.mealType || 'any',
                 dietaryRestrictions: preferences.dietaryRestrictions || [],
-                maxCalories: preferences.maxCalories || null,
-                maxPrepTime: preferences.maxPrepTime || null
-            }, config);
+                maxCalories: preferences.maxCalories || null
+            }, { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } });
             
-            if (res.data.success && res.data.data) {
-                setAiRecipes(res.data.data);
-            } else {
-                console.error('Unexpected response format:', res.data);
-                alert('Received unexpected response from server. Please try again.');
-            }
-        } catch (err) {
-            console.error("Full Error:", err);
-            console.error("Error Response:", err.response?.data);
-            console.error("Error Status:", err.response?.status);
-            console.error("API URL:", `${API_URL}/recommend`);
-            
-            if (err.response?.status === 404) {
-                alert(`API endpoint not found. Please check if the server is running at ${API_URL}`);
-            } else if (err.response?.status === 401) {
-                alert('Authentication failed. Please log in again.');
-                localStorage.removeItem('token');
-                navigate('/');
-            } else if (err.response?.data?.error) {
-                alert(err.response.data.error);
-            } else {
-                alert(`Failed to generate recipes: ${err.message || 'Unknown error'}`);
-            }
-            setAiRecipes([]); // Clear recipes on error
-        } finally {
-            setIsGenerating(false);
-        }
+            if (res.data.success) setAiRecipes(res.data.data);
+        } catch (err) { showToast(`Failed to generate recipes: ${err.message}`, "error"); } 
+        finally { setIsGenerating(false); }
     };
 
     return (
@@ -823,13 +845,10 @@ export default function Dashboard() {
             <aside className={`${sidebarOpen ? 'w-72' : 'w-24'} bg-slate-900 text-slate-300 transition-all duration-300 flex flex-col border-r border-slate-800 shadow-2xl z-20`}>
                 <div className="h-24 flex items-center px-8 border-b border-slate-800/50">
                     <div className="flex items-center gap-4 text-white font-bold text-xl tracking-tight">
-                        <div className="bg-emerald-500 p-2 rounded-xl shadow-lg shadow-emerald-900/50">
-                            <ChefHat className="text-white" size={24} />
-                        </div>
+                        <div className="bg-emerald-500 p-2 rounded-xl shadow-lg shadow-emerald-900/50"><ChefHat className="text-white" size={24} /></div>
                         {sidebarOpen && <span>NutriFit</span>}
                     </div>
                 </div>
-
                 <nav className="flex-1 py-8 px-4 space-y-2">
                     {[
                         { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
@@ -840,21 +859,12 @@ export default function Dashboard() {
                         { id: 'pantry', icon: ShoppingBag, label: 'My Pantry' },
                         { id: 'profile', icon: User, label: 'Settings' },
                     ].map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all group ${
-                                activeTab === item.id
-                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900'
-                                    : 'hover:bg-white/5 hover:text-white'
-                            }`}
-                        >
+                        <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all group ${activeTab === item.id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900' : 'hover:bg-white/5 hover:text-white'}`}>
                             <item.icon size={22} />
                             {sidebarOpen && <span className="font-medium">{item.label}</span>}
                         </button>
                     ))}
                 </nav>
-
                 <div className="p-6 border-t border-slate-800/50">
                     <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-4 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-2xl transition-colors">
                         <LogOut size={22} />
@@ -866,90 +876,43 @@ export default function Dashboard() {
             <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
                 <header className="h-24 bg-white border-b border-slate-200 flex justify-between items-center px-8 z-10">
                     <div className="flex items-center gap-6">
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">
-                            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
+                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"><Menu size={24} /></button>
                         <div className="relative hidden md:block group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Search anything..."
-                                className="pl-12 pr-4 py-3 bg-slate-100 rounded-2xl text-sm w-80 focus:w-96 transition-all outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
+                            <input type="text" placeholder="Search..." className="pl-12 pr-4 py-3 bg-slate-100 rounded-2xl text-sm w-80 focus:w-96 transition-all outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                         </div>
                     </div>
-
                     <div className="flex items-center gap-6">
-                        <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">
-                            <Bell size={24} />
-                            <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                        </button>
+                        <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"><Bell size={24} /><span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span></button>
                         <div className="w-12 h-12 bg-emerald-100 rounded-2xl border-2 border-white shadow-sm flex items-center justify-center text-emerald-700 font-bold overflow-hidden cursor-pointer hover:scale-105 transition-transform" onClick={() => setActiveTab('profile')}>
                             {user.profileImage ? <img src={user.profileImage} alt="avatar" className="w-full h-full object-cover" /> : user.username.charAt(0)}
                         </div>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
-                    {activeTab === 'overview' && <OverviewTab user={user} setActiveTab={setActiveTab} />}
+                <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50 relative">
+                    {/* Render Toast if active */}
+                    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+                    {activeTab === 'overview' && <OverviewTab user={user} setActiveTab={setActiveTab} showToast={showToast} />}
                     {activeTab === 'nutrition' && <NutritionDashboard />}
                     {activeTab === 'leaderboard' && <Leaderboard />}
-                    {activeTab === 'grocery' && (
-                        <GroceryList 
-                            user={user} 
-                            handleUpdateProfile={handleUpdateProfile} 
-                        />
-                    )}
-                    {activeTab === 'ai-chef' && (
-                        <AIChefTab
-                            pantryInput={pantryInput}
-                            setPantryInput={setPantryInput}
-                            handleGenerateRecipes={handleGenerateRecipes}
-                            isGenerating={isGenerating}
-                            aiRecipes={aiRecipes}
-                            setAiRecipes={setAiRecipes}
-                            user={user}
-                        />
-                    )}
-                    {activeTab === 'pantry' && (
-                        <PantryTab
-                            pantry={user.pantry}
-                            setPantry={(p) => setUser({...user, pantry: p})}
-                            handleUpdateProfile={handleUpdateProfile}
-                            user={user}
-                            setActiveTab={setActiveTab}
-                            setPantryInput={setPantryInput}
-                        />
-                    )}
-                    {activeTab === 'profile' && (
-                        <ProfileTab
-                            user={user}
-                            handleUpdateProfile={handleUpdateProfile}
-                            handleImageUpload={handleImageUpload}
-                        />
-                    )}
-                    {/* ... end of activeTab components ... */}
-
-    {/* --- PROFESSIONAL FOOTER --- */}
-    <div className="mt-auto py-8 text-center border-t border-slate-200/60 mx-8">
-        <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">
-            NutriFit • Health & Wellness
-        </p>
-        <div className="flex justify-center gap-4 mt-2 text-[10px] text-slate-400 font-medium">
-            <a href="#" className="hover:text-emerald-600 transition-colors">Privacy</a>
-            <span>•</span>
-            <a href="#" className="hover:text-emerald-600 transition-colors">Terms</a>
-            <span>•</span>
-            <a href="#" className="hover:text-emerald-600 transition-colors">Support</a>
-        </div>
-    </div>
-
+                    {activeTab === 'grocery' && <GroceryList user={user} handleUpdateProfile={handleUpdateProfile} />}
+                    {activeTab === 'ai-chef' && <AIChefTab pantryInput={pantryInput} setPantryInput={setPantryInput} handleGenerateRecipes={handleGenerateRecipes} isGenerating={isGenerating} aiRecipes={aiRecipes} setAiRecipes={setAiRecipes} user={user} />}
+                    {activeTab === 'pantry' && <PantryTab pantry={user.pantry} setPantry={(p) => setUser({...user, pantry: p})} handleUpdateProfile={handleUpdateProfile} user={user} setActiveTab={setActiveTab} setPantryInput={setPantryInput} />}
+                    {activeTab === 'profile' && <ProfileTab user={user} handleUpdateProfile={handleUpdateProfile} handleImageUpload={handleImageUpload} />}
+                    
+                    <div className="mt-auto py-8 text-center border-t border-slate-200/60 mx-8">
+                        <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">NutriFit • Health & Wellness</p>
+                        <div className="flex justify-center gap-4 mt-2 text-[10px] text-slate-400 font-medium">
+                            <a href="#!" className="hover:text-emerald-600 transition-colors">Privacy</a><span>•</span>
+                            <a href="#!" className="hover:text-emerald-600 transition-colors">Terms</a><span>•</span>
+                            <a href="#!" className="hover:text-emerald-600 transition-colors">Support</a>
+                        </div>
+                    </div>
                 </main>
             </div>
         </div>
     );
-    
 }
 
