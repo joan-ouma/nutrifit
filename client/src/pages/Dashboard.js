@@ -762,22 +762,37 @@ const ProfileTab = ({ user, handleUpdateProfile, handleImageUpload }) => {
     );
 };
 
-// --- MAIN DASHBOARD ---
+// --- MAIN DASHBOARD EXPORT ---
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState('overview');
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    
+    // Auto-detect mobile screen to decide if sidebar starts open or closed
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Closed on mobile, Open on desktop
+    
     const [user, setUser] = useState({ username: 'User', email: '', profileImage: null, pantry: [] });
     const [pantryInput, setPantryInput] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [aiRecipes, setAiRecipes] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [toast, setToast] = useState(null); // ✅ NEW: Toast State
+    const [toast, setToast] = useState(null);
     const navigate = useNavigate();
 
-    // Helper for showing notifications
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
     };
+
+    // Handle Screen Resize
+    useEffect(() => {
+        const handleResize = () => {
+            const mobile = window.innerWidth < 768;
+            setIsMobile(mobile);
+            if (!mobile) setSidebarOpen(true); // Always open on desktop
+            else setSidebarOpen(false); // Always start closed on mobile resize
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('nutrifit_user');
@@ -790,6 +805,7 @@ export default function Dashboard() {
         navigate('/');
     };
 
+    // Profile Update Logic
     const handleUpdateProfile = async (updatedData, showSuccess = true) => {
         try {
             setUser(updatedData);
@@ -840,16 +856,49 @@ export default function Dashboard() {
         finally { setIsGenerating(false); }
     };
 
+    // Helper to close sidebar on mobile when an item is clicked
+    const handleNavClick = (tabId) => {
+        setActiveTab(tabId);
+        if (isMobile) setSidebarOpen(false);
+    };
+
     return (
-        <div className="flex h-screen bg-slate-50 font-sans text-slate-900">
-            <aside className={`${sidebarOpen ? 'w-72' : 'w-24'} bg-slate-900 text-slate-300 transition-all duration-300 flex flex-col border-r border-slate-800 shadow-2xl z-20`}>
-                <div className="h-24 flex items-center px-8 border-b border-slate-800/50">
-                    <div className="flex items-center gap-4 text-white font-bold text-xl tracking-tight">
-                        <div className="bg-emerald-500 p-2 rounded-xl shadow-lg shadow-emerald-900/50"><ChefHat className="text-white" size={24} /></div>
-                        {sidebarOpen && <span>NutriFit</span>}
+        <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
+            
+            {/* --- MOBILE OVERLAY (Dark Background) --- */}
+            {/* This fixes the "Stuck" issue. Clicking this black area closes the menu. */}
+            {isMobile && sidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/60 z-30 backdrop-blur-sm transition-opacity"
+                    onClick={() => setSidebarOpen(false)}
+                ></div>
+            )}
+
+            {/* --- SIDEBAR --- */}
+            {/* Fixed position on mobile (z-40), Relative on Desktop */}
+            <aside className={`
+                fixed md:relative top-0 bottom-0 left-0 z-40
+                bg-slate-900 text-slate-300 shadow-2xl transition-all duration-300 ease-in-out
+                ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0 md:w-20'}
+            `}>
+                <div className="h-24 flex items-center px-6 border-b border-slate-800/50 justify-between">
+                    <div className="flex items-center gap-3 text-white font-bold text-xl tracking-tight overflow-hidden whitespace-nowrap">
+                        <div className="bg-emerald-500 p-2 rounded-xl shadow-lg shadow-emerald-900/50 flex-shrink-0">
+                            <ChefHat className="text-white" size={24} />
+                        </div>
+                        {/* Only show text if open */}
+                        {(sidebarOpen || isMobile) && <span>NutriFit</span>}
                     </div>
+                    
+                    {/* Mobile Close Button */}
+                    {isMobile && (
+                        <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white">
+                            <X size={24} />
+                        </button>
+                    )}
                 </div>
-                <nav className="flex-1 py-8 px-4 space-y-2">
+
+                <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto custom-scrollbar">
                     {[
                         { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
                         { id: 'nutrition', icon: Activity, label: 'Nutrition' },
@@ -859,38 +908,75 @@ export default function Dashboard() {
                         { id: 'pantry', icon: ShoppingBag, label: 'My Pantry' },
                         { id: 'profile', icon: User, label: 'Settings' },
                     ].map((item) => (
-                        <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all group ${activeTab === item.id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900' : 'hover:bg-white/5 hover:text-white'}`}>
-                            <item.icon size={22} />
-                            {sidebarOpen && <span className="font-medium">{item.label}</span>}
+                        <button 
+                            key={item.id} 
+                            onClick={() => handleNavClick(item.id)} // ✅ Auto-closes on mobile
+                            className={`
+                                w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group whitespace-nowrap
+                                ${activeTab === item.id 
+                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' 
+                                    : 'hover:bg-white/5 hover:text-white'
+                                }
+                            `}
+                        >
+                            <item.icon size={22} className="flex-shrink-0" />
+                            {/* Show label if open OR if on mobile (since mobile menu is full width) */}
+                            {(sidebarOpen || isMobile) && <span className="font-medium">{item.label}</span>}
                         </button>
                     ))}
                 </nav>
-                <div className="p-6 border-t border-slate-800/50">
-                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-4 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-2xl transition-colors">
-                        <LogOut size={22} />
-                        {sidebarOpen && <span className="font-medium">Log Out</span>}
+
+                <div className="p-4 border-t border-slate-800/50">
+                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-colors whitespace-nowrap">
+                        <LogOut size={22} className="flex-shrink-0" />
+                        {(sidebarOpen || isMobile) && <span className="font-medium">Log Out</span>}
                     </button>
                 </div>
             </aside>
 
-            <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-                <header className="h-24 bg-white border-b border-slate-200 flex justify-between items-center px-8 z-10">
-                    <div className="flex items-center gap-6">
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"><Menu size={24} /></button>
+            {/* --- MAIN CONTENT AREA --- */}
+            <div className="flex-1 flex flex-col h-screen overflow-hidden relative w-full">
+                
+                {/* Header */}
+                <header className="h-20 bg-white border-b border-slate-200 flex justify-between items-center px-4 md:px-8 z-20">
+                    <div className="flex items-center gap-4">
+                        {/* Hamburger Button */}
+                        <button 
+                            onClick={() => setSidebarOpen(!sidebarOpen)} 
+                            className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors md:hidden"
+                        >
+                            <Menu size={24} />
+                        </button>
+                        
+                        {/* Search Bar (Hidden on Mobile to save space) */}
                         <div className="relative hidden md:block group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
-                            <input type="text" placeholder="Search..." className="pl-12 pr-4 py-3 bg-slate-100 rounded-2xl text-sm w-80 focus:w-96 transition-all outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                className="pl-12 pr-4 py-2.5 bg-slate-100 rounded-xl text-sm w-64 lg:w-80 focus:w-96 transition-all outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
                     </div>
-                    <div className="flex items-center gap-6">
-                        <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"><Bell size={24} /><span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span></button>
-                        <div className="w-12 h-12 bg-emerald-100 rounded-2xl border-2 border-white shadow-sm flex items-center justify-center text-emerald-700 font-bold overflow-hidden cursor-pointer hover:scale-105 transition-transform" onClick={() => setActiveTab('profile')}>
+
+                    <div className="flex items-center gap-4">
+                        <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">
+                            <Bell size={24} />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                        </button>
+                        <div 
+                            className="w-10 h-10 bg-emerald-100 rounded-xl border-2 border-white shadow-sm flex items-center justify-center text-emerald-700 font-bold overflow-hidden cursor-pointer active:scale-95 transition-transform" 
+                            onClick={() => setActiveTab('profile')}
+                        >
                             {user.profileImage ? <img src={user.profileImage} alt="avatar" className="w-full h-full object-cover" /> : user.username.charAt(0)}
                         </div>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50 relative">
+                {/* Content */}
+                <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 relative custom-scrollbar">
                     {/* Render Toast if active */}
                     {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
@@ -902,7 +988,8 @@ export default function Dashboard() {
                     {activeTab === 'pantry' && <PantryTab pantry={user.pantry} setPantry={(p) => setUser({...user, pantry: p})} handleUpdateProfile={handleUpdateProfile} user={user} setActiveTab={setActiveTab} setPantryInput={setPantryInput} />}
                     {activeTab === 'profile' && <ProfileTab user={user} handleUpdateProfile={handleUpdateProfile} handleImageUpload={handleImageUpload} />}
                     
-                    <div className="mt-auto py-8 text-center border-t border-slate-200/60 mx-8">
+                    {/* Footer */}
+                    <div className="mt-auto py-8 text-center border-t border-slate-200/60 mx-4 md:mx-8">
                         <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">NutriFit • Health & Wellness</p>
                         <div className="flex justify-center gap-4 mt-2 text-[10px] text-slate-400 font-medium">
                             <a href="#!" className="hover:text-emerald-600 transition-colors">Privacy</a><span>•</span>
