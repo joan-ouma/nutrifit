@@ -49,7 +49,7 @@ export default function Leaderboard() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto animate-fadeIn pb-10">
+        <div className="max-w-4xl mx-auto animate-fadeIn">
             
             {/* --- HEADER --- */}
             <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">

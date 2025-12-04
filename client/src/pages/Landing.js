@@ -145,13 +145,12 @@ export default function Landing() {
                             </div>
                         </div>
 
-                        {/* Floating Card 3 - Achievement */}
                         <div className="absolute top-1/2 -right-10 bg-gradient-to-br from-yellow-400 to-orange-500 p-5 rounded-2xl shadow-2xl text-white hidden lg:block animate-float" style={{ animationDuration: '3.5s', animationDelay: '1s' }}>
                             <div className="flex items-center gap-3">
                                 <Trophy size={28} />
                                 <div>
                                     <p className="text-xs font-semibold opacity-90">Achievement</p>
-                                    <p className="text-sm font-bold">7 Day Streak!</p>
+                                    <p className="text-sm font-bold">Daily Streak!</p>
                                 </div>
                             </div>
                         </div>
@@ -333,23 +332,20 @@ export default function Landing() {
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
                             {
-                                name: "Sarah Johnson",
+                                name: "Wanjiku Kamau",
                                 role: "Fitness Enthusiast",
-                                image: "https://i.pravatar.cc/150?img=47",
                                 rating: 5,
                                 text: "NutriFit transformed how I track my nutrition. The leaderboard keeps me motivated, and the AI recommendations are spot-on!"
                             },
                             {
-                                name: "Michael Chen",
+                                name: "Ochieng Otieno",
                                 role: "Health Coach",
-                                image: "https://i.pravatar.cc/150?img=33",
                                 rating: 5,
                                 text: "As a health coach, I recommend NutriFit to all my clients. The macro tracking and insights are incredibly detailed and accurate."
                             },
                             {
-                                name: "Emily Rodriguez",
+                                name: "Amina Hassan",
                                 role: "Busy Professional",
-                                image: "https://i.pravatar.cc/150?img=20",
                                 rating: 5,
                                 text: "The meal planning feature saves me hours each week. I love how it generates grocery lists automatically!"
                             }
@@ -362,7 +358,9 @@ export default function Landing() {
                                 </div>
                                 <p className="text-slate-700 mb-6 leading-relaxed italic">"{testimonial.text}"</p>
                                 <div className="flex items-center gap-4">
-                                    <img src={testimonial.image} alt={testimonial.name} className="w-12 h-12 rounded-full" />
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-lg">
+                                        {testimonial.name.charAt(0)}
+                                    </div>
                                     <div>
                                         <div className="font-bold text-slate-900">{testimonial.name}</div>
                                         <div className="text-sm text-slate-500">{testimonial.role}</div>

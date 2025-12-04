@@ -35,11 +35,11 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
-const OverviewTab = ({ user, setActiveTab, showToast }) => {
+const OverviewTab = ({ user, setActiveTab, showToast, refreshUserData }) => {
     const hour = new Date().getHours();
     const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
     const nextMeal = hour < 11 ? 'Breakfast' : hour < 15 ? 'Lunch' : hour < 20 ? 'Dinner' : 'Snack';
-    const streakDays = user.streak || 1;
+    const streakDays = user.streak || 0;
 
     const [todayStats, setTodayStats] = useState({ calories: 0, goal: user.calorieGoal || 2000 });
     const [waterStats, setWaterStats] = useState({ current: 0, goal: user.waterGoal || 2500 });
@@ -60,10 +60,14 @@ const OverviewTab = ({ user, setActiveTab, showToast }) => {
 
                 setTodayStats({ calories: totalCals, goal: user.calorieGoal || 2000 });
                 setWaterStats({ current: totalWater, goal: user.waterGoal || 2500 });
+                
+                if (refreshUserData) {
+                    await refreshUserData();
+                }
             } catch (err) { console.error("Stats error", err); }
         };
         fetchData();
-    }, [user]);
+    }, [user, refreshUserData]);
 
     const handleQuickAdd = async (item) => {
         setAddingItem(item.name); 
@@ -82,6 +86,7 @@ const OverviewTab = ({ user, setActiveTab, showToast }) => {
                     servingSize: '1 portion', notes: 'Quick add from Dashboard'
                 });
                 setTodayStats(prev => ({ ...prev, calories: prev.calories + item.cal }));
+                if (refreshUserData) await refreshUserData();
                 if (showToast) showToast(`${item.name} logged!`, "success");
             }
         } catch (error) {
@@ -93,14 +98,15 @@ const OverviewTab = ({ user, setActiveTab, showToast }) => {
     const waterPercent = Math.min((waterStats.current / waterStats.goal) * 100, 100);
 
     return (
-        <div className="space-y-8 animate-fadeIn pb-4 max-w-6xl mx-auto w-full">
-            {/* HERO SECTION */}
+        <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto w-full">
             <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="relative z-10">
                     <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider text-xs mb-2">
                         <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> Online & Tracking
                     </div>
-                    <h2 className="text-3xl font-bold mb-2 capitalize">Good {timeOfDay}, {user.username}.</h2>
+                    <h2 className="text-3xl font-bold mb-2">
+                        Good {timeOfDay}, {user.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'User'}.
+                    </h2>
                     <p className="text-slate-300 max-w-md mb-4">Consistency is key. You're on a roll with your <span className="text-white font-bold">{user.goals || 'balanced'}</span> journey.</p>
                     <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 max-w-sm backdrop-blur-sm">
                         <div className="flex justify-between text-xs text-slate-400 mb-2 font-medium"><span>Daily Fuel</span><span>{Math.round(todayStats.calories)} / {todayStats.goal} kcal</span></div>
@@ -161,7 +167,7 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
     };
 
     return (
-        <div className="max-w-5xl mx-auto h-full flex flex-col animate-fadeIn relative">
+        <div className="max-w-5xl mx-auto flex flex-col animate-fadeIn relative min-h-full">
             <div className="pt-6 px-6 pb-2 text-center">
                 <div className="inline-flex items-center gap-3 bg-white px-5 py-2 rounded-full shadow-sm border border-slate-200 mb-6"><div className="relative"><div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div></div><span className="text-xs font-bold text-slate-600 uppercase tracking-widest">NutriFit Assistant Online</span></div>
                 {aiRecipes.length === 0 && !isGenerating && (
@@ -184,7 +190,7 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
                     </div>
                 </div>
             </div>
-            <div className="flex-1 px-6 pb-20 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 px-6 pb-8 overflow-y-auto custom-scrollbar">
                 {isGenerating && <div className="flex flex-col items-center justify-center py-12 animate-pulse"><div className="bg-white p-5 rounded-full shadow-xl mb-5 border border-emerald-100"><ChefHat size={40} className="text-emerald-600" /></div><h3 className="text-lg font-bold text-slate-800">Analyzing your ingredients...</h3><p className="text-slate-500 text-sm">Reviewing {preferences.cuisine !== 'any' ? preferences.cuisine : 'global'} recipes</p></div>}
                 {!isGenerating && aiRecipes.length > 0 && <div className="animate-slideUp"><div className="flex justify-between items-center mb-6"><h3 className="font-bold text-slate-700 flex items-center gap-2"><Sparkles size={18} className="text-emerald-500" /> Recommended for you</h3><button onClick={() => setAiRecipes([])} className="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wide">Clear Results</button></div><div className="grid md:grid-cols-2 gap-6">{aiRecipes.map((recipe, idx) => <RecipeCard key={idx} recipe={recipe} />)}</div></div>}
             </div>
@@ -242,7 +248,7 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
     };
 
     return (
-        <div className="max-w-4xl mx-auto animate-fadeIn pb-10">
+        <div className="max-w-4xl mx-auto animate-fadeIn">
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 mb-6 relative overflow-hidden">
                 <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
@@ -350,9 +356,32 @@ export default function Dashboard() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    const refreshUserData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            const res = await axios.get(`${API_URL}/user/profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.success && res.data.data) {
+                setUser(res.data.data);
+                localStorage.setItem('nutrifit_user', JSON.stringify(res.data.data));
+            }
+        } catch (error) {
+            console.error("Failed to refresh user data:", error);
+        }
+    };
+
     useEffect(() => {
-        const storedUser = localStorage.getItem('nutrifit_user');
-        if (storedUser) setUser(JSON.parse(storedUser));
+        const loadUserData = async () => {
+            const storedUser = localStorage.getItem('nutrifit_user');
+            if (storedUser) {
+                const parsedUser = JSON.parse(storedUser);
+                setUser(parsedUser);
+            }
+            await refreshUserData();
+        };
+        loadUserData();
     }, []);
 
     const handleLogout = () => {
@@ -419,14 +448,14 @@ export default function Dashboard() {
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'overview': return <OverviewTab user={user} setActiveTab={setActiveTab} showToast={showToast} />;
+            case 'overview': return <OverviewTab user={user} setActiveTab={setActiveTab} showToast={showToast} refreshUserData={refreshUserData} />;
             case 'nutrition': return <NutritionDashboard />;
             case 'leaderboard': return <Leaderboard currentUser={user} />;
             case 'grocery': return <GroceryList user={user} handleUpdateProfile={handleUpdateProfile} />;
             case 'ai-chef': return <AIChefTab pantryInput={pantryInput} setPantryInput={setPantryInput} handleGenerateRecipes={handleGenerateRecipes} isGenerating={isGenerating} aiRecipes={aiRecipes} setAiRecipes={setAiRecipes} user={user} />;
             case 'pantry': return <PantryTab pantry={user.pantry} setPantry={(p) => setUser({...user, pantry: p})} handleUpdateProfile={handleUpdateProfile} user={user} setActiveTab={setActiveTab} setPantryInput={setPantryInput} />;
             case 'profile': return <ProfileTab user={user} handleUpdateProfile={handleUpdateProfile} handleImageUpload={handleImageUpload} />;
-            default: return <OverviewTab user={user} setActiveTab={setActiveTab} showToast={showToast} />;
+            default: return <OverviewTab user={user} setActiveTab={setActiveTab} showToast={showToast} refreshUserData={refreshUserData} />;
         }
     };
 
@@ -478,12 +507,14 @@ export default function Dashboard() {
                     </div>
                 </header>
 
-                <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-50 relative flex flex-col scroll-smooth">
-                    <div className="flex-1 p-4 md:p-8 w-full max-w-7xl mx-auto min-h-0 flex flex-col">
+                <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-50 relative scroll-smooth">
+                    <div className="p-4 md:p-8 w-full max-w-7xl mx-auto">
                         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
                         {renderContent()}
+                        <div className="mt-24 mb-8">
+                            <Footer onNavigate={setActiveTab} />
+                        </div>
                     </div>
-                    {activeTab === 'overview' && <Footer onNavigate={setActiveTab} />}
                 </main>
             </div>
         </div>

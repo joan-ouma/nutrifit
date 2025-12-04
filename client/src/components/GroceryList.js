@@ -161,7 +161,7 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
     };
 
     return (
-        <div className="max-w-4xl mx-auto animate-fadeIn pb-20">
+        <div className="max-w-4xl mx-auto animate-fadeIn">
             
             {/* HERO HEADER */}
             <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-8 rounded-3xl shadow-xl mb-8 text-white relative overflow-hidden">

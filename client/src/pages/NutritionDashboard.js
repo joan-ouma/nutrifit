@@ -8,7 +8,7 @@ import ExportButton from '../components/ExportButton';
 import WaterTracker from '../components/WaterTracker';
 import { getMealsByDate, getWeeklySummary, getNutritionInsights, getPersonalizedRecommendations, getUserProfile, checkAchievements } from '../api';
 
-export default function NutritionDashboard() {
+export default function NutritionDashboard({ onMealLogged }) {
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [meals, setMeals] = useState([]);
     const [dailyLog, setDailyLog] = useState(null);
@@ -87,6 +87,9 @@ export default function NutritionDashboard() {
     const handleMealAdded = () => {
         loadMeals();
         loadWeeklyData();
+        if (onMealLogged) {
+            onMealLogged();
+        }
         loadInsights();
         checkAchievements(); // Check for new achievements when meal is added
     };
@@ -123,7 +126,7 @@ export default function NutritionDashboard() {
     const calorieGoal = user?.calorieGoal || 2000;
 
     return (
-        <div className="space-y-6 animate-fadeIn pb-10">
+        <div className="space-y-6 animate-fadeIn">
             {/* Header */}
             <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-8 text-white shadow-xl">
                 <div className="flex items-center justify-between mb-4">
