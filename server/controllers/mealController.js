@@ -1,17 +1,46 @@
 const Meal = require('../models/Meal');
 const DailyLog = require('../models/DailyLog');
 const User = require('../models/User');
-const Leaderboard = require('../models/Leaderboard'); // ✅ Import Leaderboard Model directly
+const Leaderboard = require('../models/Leaderboard');
 
-/**
- * Log a meal
- */
+const updateStreak = async (userId, mealDate) => {
+    try {
+        const user = await User.findById(userId);
+        if (!user) return;
+
+        const today = new Date(mealDate);
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+
+        const lastMealDate = user.lastMealDate ? new Date(user.lastMealDate) : null;
+        const lastMealStr = lastMealDate ? lastMealDate.toISOString().split('T')[0] : null;
+
+        if (lastMealStr === todayStr) {
+            return;
+        }
+
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        if (!lastMealStr || lastMealStr === yesterdayStr) {
+            user.streak = (user.streak || 0) + 1;
+        } else {
+            user.streak = 1;
+        }
+
+        user.lastMealDate = today;
+        await user.save();
+    } catch (error) {
+        console.error("Streak update error:", error);
+    }
+};
+
 exports.logMeal = async (req, res, next) => {
     try {
         const { name, type, date, recipeId, nutrition, ingredients, servingSize, notes } = req.body;
         const userId = req.user._id || req.user.id;
 
-        // 1. Save Meal
         const meal = new Meal({
             userId,
             name,
@@ -25,7 +54,6 @@ exports.logMeal = async (req, res, next) => {
 
         await meal.save();
 
-        // 2. Update Daily Log (Nutrition Stats)
         const mealDate = new Date(meal.date);
         mealDate.setHours(0, 0, 0, 0);
         
@@ -48,26 +76,27 @@ exports.logMeal = async (req, res, next) => {
 
         await dailyLog.save();
 
-        // 3. ✅ ATOMIC LEADERBOARD UPDATE (The Fix)
-        // Instead of recalculating, we just FORCE +10 points instantly.
+        await updateStreak(userId, mealDate);
+
+        const updatedUser = await User.findById(userId);
+
         try {
             await Leaderboard.findOneAndUpdate(
                 { userId, date: mealDate },
                 {
-                    $setOnInsert: { // Set these only if creating new entry
-                        username: user.username,
-                        profileImage: user.profileImage,
-                        streak: user.streak || 1
+                    $setOnInsert: {
+                        username: updatedUser.username,
+                        profileImage: updatedUser.profileImage,
+                        streak: updatedUser.streak || 1
                     },
-                    $inc: { // INCREMENT existing values safely
-                        score: 10,       // +10 Points
-                        points: 10,      // +10 Points (Backup field)
-                        mealsLogged: 1   // +1 Meal
+                    $inc: {
+                        score: 10,
+                        points: 10,
+                        mealsLogged: 1
                     }
                 },
                 { upsert: true, new: true }
             );
-            console.log("✅ Points incremented +10");
         } catch (err) {
             console.error("Leaderboard update error:", err);
         }
@@ -83,7 +112,6 @@ exports.logMeal = async (req, res, next) => {
     }
 };
 
-// ... (Keep existing getters below) ...
 exports.getMealsByDate = async (req, res, next) => {
     try {
         const userId = req.user._id;
@@ -102,7 +130,6 @@ exports.getMealsByDate = async (req, res, next) => {
 
 exports.getWeeklySummary = async (req, res, next) => {
     try {
-       // Placeholder for weekly summary logic if you need it restored
        res.json({ success: true, data: [] });
     } catch (error) { next(error); }
 };
@@ -112,13 +139,11 @@ exports.deleteMeal = async (req, res, next) => {
         const userId = req.user._id;
         const { mealId } = req.params;
         
-        // Find meal to get date before deleting
         const meal = await Meal.findById(mealId);
         if(meal) {
             const mealDate = new Date(meal.date);
             mealDate.setHours(0,0,0,0);
 
-            // Remove points atomically
             await Leaderboard.findOneAndUpdate(
                 { userId, date: mealDate },
                 { $inc: { score: -10, points: -10, mealsLogged: -1 } }

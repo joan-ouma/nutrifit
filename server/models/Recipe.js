@@ -1,7 +1,3 @@
-/**
- * Recipe Model
- * Stores user-saved recipes and favorites
- */
 const mongoose = require('mongoose');
 
 const recipeSchema = new mongoose.Schema({
@@ -60,7 +56,6 @@ const recipeSchema = new mongoose.Schema({
     timestamps: true 
 });
 
-// Index for faster searches
 recipeSchema.index({ userId: 1, savedAt: -1 });
 recipeSchema.index({ name: 'text', 'ingredients': 'text', 'whyItWorks': 'text' });
 

@@ -1,104 +1,132 @@
 /**
- * User Model
- * Stores user information, preferences, and favorites
+ * User Controller
+ * Handles user profile updates and search history
  */
-const mongoose = require('mongoose');
+const User = require('../models/User');
 
-const userSchema = new mongoose.Schema({
-    username: { 
-        type: String, 
-        required: [true, 'Username is required'],
-        unique: true,
-        trim: true,
-        minlength: [3, 'Username must be at least 3 characters']
-    },
-    email: { 
-        type: String, 
-        required: [true, 'Email is required'],
-        unique: true,
-        trim: true,
-        lowercase: true,
-        match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email']
-    },
-    password: { 
-        type: String, 
-        required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters']
-    },
-    pantry: [{
-        type: String,
-        trim: true
-    }],
-    goals: { 
-        type: String, 
-        enum: ['balanced', 'weight-loss', 'muscle', 'weight-gain'],
-        default: 'balanced' 
-    },
-    budgetLevel: { 
-        type: String, 
-        enum: ['low', 'medium', 'high'],
-        default: 'medium' 
-    },
-    // Calorie and nutrition goals
-    calorieGoal: { 
-        type: Number, 
-        default: 2000 
-    },
-    macroGoals: {
-        protein: { type: Number, default: 30 }, // percentage
-        carbs: { type: Number, default: 40 },
-        fats: { type: Number, default: 30 }
-    },
-    // Dietary preferences and restrictions
-    dietaryRestrictions: [{
-        type: String,
-        enum: ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'keto', 'paleo', 'halal', 'kosher']
-    }],
-    allergies: [{
-        type: String
-    }],
-    // Activity level for calorie calculation
-    activityLevel: {
-        type: String,
-        enum: ['sedentary', 'lightly-active', 'moderately-active', 'very-active', 'extra-active'],
-        default: 'moderately-active'
-    },
-    // Body metrics (optional)
-    bodyMetrics: {
-        age: { type: Number },
-        gender: { type: String, enum: ['male', 'female', 'other'] },
-        height: { type: Number }, // in cm
-        weight: { type: Number }, // in kg
-        targetWeight: { type: Number } // in kg
-    },
-    // Water intake goal
-    waterGoal: {
-        type: Number,
-        default: 2000 // ml - 8 glasses
-    },
-    bio: { 
-        type: String,
-        maxlength: [500, 'Bio must be less than 500 characters']
-    },
-    profileImage: { 
-        type: String 
-    },
-    favoriteRecipes: [{ 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Recipe' 
-    }],
-    searchHistory: [{
-        query: { type: String, required: true },
-        timestamp: { type: Date, default: Date.now }
-    }]
-}, { 
-    timestamps: true 
-});
+// Update user profile
+exports.updateProfile = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const updateData = req.body;
 
-// Indexes are automatically created by unique: true on email and username fields
-// No need for duplicate index definitions
+        // Remove password from update data if present
+        delete updateData.password;
+        delete updateData._id;
+        delete updateData.email; // Prevent email changes
 
-module.exports = mongoose.model('User', userSchema);
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found',
+                msg: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: user,
+            msg: 'Profile updated successfully'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            msg: 'Failed to update profile'
+        });
+    }
+};
+
+// Get user profile
+exports.getProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id)
+            .select('-password');
+
+        res.json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            msg: 'Failed to fetch profile'
+        });
+    }
+};
+
+// Get user search history
+exports.getSearchHistory = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id)
+            .select('searchHistory');
+
+        res.json({
+            success: true,
+            data: user.searchHistory || [],
+            count: user.searchHistory?.length || 0
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            msg: 'Failed to fetch search history'
+        });
+    }
+};
+
+// Save search history
+exports.saveSearchHistory = async (req, res) => {
+    try {
+        const { query } = req.body;
+
+        if (!query || !query.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Search query required',
+                msg: 'Please provide a search query'
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            {
+                $push: {
+                    searchHistory: {
+                        query: query.trim(),
+                        timestamp: new Date()
+                    }
+                }
+            },
+            { new: true }
+        ).select('searchHistory');
+
+        // Keep only last 20 searches
+        if (user.searchHistory.length > 20) {
+            user.searchHistory = user.searchHistory.slice(-20);
+            await user.save();
+        }
+
+        res.json({
+            success: true,
+            data: user.searchHistory,
+            msg: 'Search saved'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            msg: 'Failed to save search'
+        });
+    }
+};
 
 
 

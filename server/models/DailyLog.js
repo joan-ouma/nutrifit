@@ -1,7 +1,3 @@
-/**
- * DailyLog Model
- * Aggregates daily nutrition data for users
- */
 const mongoose = require('mongoose');
 
 const dailyLogSchema = new mongoose.Schema({
@@ -18,12 +14,12 @@ const dailyLogSchema = new mongoose.Schema({
     },
     totalNutrition: {
         calories: { type: Number, default: 0 },
-        protein: { type: Number, default: 0 }, // grams
-        carbs: { type: Number, default: 0 }, // grams
-        fats: { type: Number, default: 0 }, // grams
+        protein: { type: Number, default: 0 },
+        carbs: { type: Number, default: 0 },
+        fats: { type: Number, default: 0 },
         fiber: { type: Number, default: 0 },
         sugar: { type: Number, default: 0 },
-        sodium: { type: Number, default: 0 } // mg
+        sodium: { type: Number, default: 0 }
     },
     mealCount: {
         breakfast: { type: Number, default: 0 },
@@ -37,11 +33,11 @@ const dailyLogSchema = new mongoose.Schema({
     },
     waterIntake: { 
         type: Number, 
-        default: 0 // in ml
+        default: 0
     },
     waterGoal: {
         type: Number,
-        default: 2000 // ml - 8 glasses of water
+        default: 2000
     },
     exercise: {
         caloriesBurned: { type: Number, default: 0 },
@@ -52,15 +48,12 @@ const dailyLogSchema = new mongoose.Schema({
     timestamps: true 
 });
 
-// Compound unique index - one log per user per day
 dailyLogSchema.index({ userId: 1, date: 1 }, { unique: true });
 
-// Method to calculate remaining calories
 dailyLogSchema.methods.getRemainingCalories = function() {
     return Math.max(0, this.calorieGoal - this.totalNutrition.calories);
 };
 
-// Method to calculate macro percentages
 dailyLogSchema.methods.getMacroPercentages = function() {
     const total = this.totalNutrition.protein * 4 + 
                   this.totalNutrition.carbs * 4 + 

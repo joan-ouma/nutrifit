@@ -10,6 +10,9 @@ const auth = require('../middleware/auth');
 // Generate personalized recommendations (requires auth)
 router.post('/personalized', auth, recommendController.getPersonalizedRecommendations);
 
+//generate estimate prizes 
+router.post('/estimate', auth, recommendController.estimateGroceryItem);
+
 // Generate recipes from pantry (requires auth)
 router.post('/', auth, recommendController.generateRecipes);
 

@@ -1,18 +1,13 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const User = require('../models/User');
-// ✅ CRITICAL FIX: Added these missing imports
 const Meal = require('../models/Meal'); 
 const DailyLog = require('../models/DailyLog');
 
 require('dotenv').config();
 
-// Initialize Gemini
 const key = process.env.GEMINI_API_KEY;
 const genAI = key ? new GoogleGenerativeAI(key) : null;
 
-// ==========================================
-// 1. GENERATE RECIPES (The AI Chef)
-// ==========================================
 exports.generateRecipes = async (req, res) => {
     try {
         const { pantry, cuisine, mealType, userGoal, maxCalories } = req.body;
@@ -25,7 +20,6 @@ exports.generateRecipes = async (req, res) => {
             return res.status(500).json({ success: false, error: "Server Error: API Key Missing" });
         }
 
-        // Using the model that worked for you in the logs
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const prompt = `
@@ -76,12 +70,8 @@ exports.generateRecipes = async (req, res) => {
 exports.getPersonalizedRecommendations = async (req, res) => {
     try {
         const userId = req.user._id;
-        
-        // ✅ THIS LINE CAUSED THE CRASH BEFORE (Meal was undefined)
-        // Now it works because we imported Meal at the top
         const recentMeals = await Meal.find({ userId }).sort({ date: -1 }).limit(5);
         
-        // Placeholder response for now to keep the app stable
         res.json({ 
             success: true, 
             message: "Personalized endpoint ready",
@@ -92,14 +82,10 @@ exports.getPersonalizedRecommendations = async (req, res) => {
 
     } catch (error) {
         console.error("Personalized Error:", error.message);
-        // Don't crash the server, just send error
         res.status(500).json({ success: false, error: error.message });
     }
 };
 
-// ==========================================
-// 3. SMART GROCERY ESTIMATOR
-// ==========================================
 exports.estimateGroceryItem = async (req, res) => {
     try {
         const { itemName } = req.body;
