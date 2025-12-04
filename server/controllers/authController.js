@@ -1,17 +1,11 @@
-/**
- * Auth Controller
- * Handles authentication: register, login, get current user
- */
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Register new user
 exports.register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
 
-        // Validation
         if (!username || !email || !password) {
             return res.status(400).json({
                 success: false,
@@ -28,7 +22,6 @@ exports.register = async (req, res) => {
             });
         }
 
-        // Check if user exists
         const existingUser = await User.findOne({
             $or: [{ email }, { username }]
         });
@@ -43,11 +36,9 @@ exports.register = async (req, res) => {
             });
         }
 
-        // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create user
         const user = await User.create({
             username,
             email,
@@ -83,12 +74,10 @@ exports.register = async (req, res) => {
     }
 };
 
-// Login user
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Validation
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
@@ -97,7 +86,6 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Find user
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(401).json({
@@ -107,7 +95,6 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({
@@ -143,7 +130,6 @@ exports.login = async (req, res) => {
     }
 };
 
-// Get current user (protected)
 exports.getCurrentUser = async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
