@@ -5,6 +5,7 @@ import {
     Utensils, Target, TrendingUp, Award, Zap, CheckCircle, BarChart3,
     Calendar, Trophy, Activity, Download, Sparkles
 } from 'lucide-react';
+import Footer from '../components/Footer';
 
 export default function Landing() {
     return (
@@ -464,22 +465,7 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="bg-slate-900 text-slate-400 py-12">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="flex flex-col md:flex-row justify-between items-center">
-                        <div className="flex items-center gap-3 mb-4 md:mb-0">
-                            <div className="bg-gradient-to-br from-emerald-600 to-teal-600 p-2 rounded-lg">
-                                <ChefHat size={20} className="text-white" />
-                            </div>
-                            <span className="text-white font-bold text-xl">NutriFit</span>
-                        </div>
-                        <div className="text-sm">
-                            © 2025 NutriFit. All rights reserved.
-                        </div>
-                    </div>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 }
