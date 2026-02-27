@@ -68,30 +68,20 @@ cd client
 cd server
 npm run dev
 ```
-Backend runs on http://localhost:5000
+
 
 **Terminal 2 - Frontend:**
 ```bash
 cd client
 npm start
 ```
-Frontend runs on http://localhost:3000
+
 
 ## 🔧 Environment Variables
 
-### Backend (.env in server/)
-```env
-PORT=5000
-MONGO_URI=mongodb://localhost:27017/nutrifit
-JWT_SECRET=your-secret-key-here
-CORS_ORIGIN=http://localhost:3000
-GEMINI_API_KEY=your-gemini-api-key (optional)
-```
 
 ### Frontend (.env in client/)
-```env
-REACT_APP_API_URL=http://localhost:5000/api
-```
+
 
 ## 📚 Features
 
