@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     LayoutDashboard, ChefHat, ShoppingBag, User, LogOut, Search, Bell,
-    Menu, X, Loader2, Flame, Camera, Save, Plus, Trash2, Sparkles, 
+    Menu, X, Loader2, Flame, Camera, Save, Plus, Trash2, Sparkles,
     Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle, Droplet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; 
+import axios from 'axios';
 import { API_URL, logMeal } from '../api';
 
 import RecipeCard from '../components/RecipeCard';
@@ -50,17 +50,17 @@ const OverviewTab = ({ user, setActiveTab, showToast, refreshUserData }) => {
             try {
                 const token = localStorage.getItem('token');
                 const today = new Date().toISOString().split('T')[0];
-                
+
                 const resMeals = await axios.get(`${API_URL}/meals/date/${today}`, { headers: { Authorization: `Bearer ${token}` } });
                 const meals = resMeals.data.meals || [];
                 const totalCals = meals.reduce((sum, m) => sum + (m.nutrition?.calories || 0), 0);
-                
+
                 const resWater = await axios.get(`${API_URL}/water?startDate=${today}&endDate=${today}`, { headers: { Authorization: `Bearer ${token}` } });
                 const totalWater = resWater.data.summary?.totalWater || 0;
 
                 setTodayStats({ calories: totalCals, goal: user.calorieGoal || 2000 });
                 setWaterStats({ current: totalWater, goal: user.waterGoal || 2500 });
-                
+
                 if (refreshUserData) {
                     await refreshUserData();
                 }
@@ -70,7 +70,7 @@ const OverviewTab = ({ user, setActiveTab, showToast, refreshUserData }) => {
     }, [user, refreshUserData]);
 
     const handleQuickAdd = async (item) => {
-        setAddingItem(item.name); 
+        setAddingItem(item.name);
         try {
             const token = localStorage.getItem('token');
             const today = new Date().toISOString().split('T')[0];
@@ -177,9 +177,9 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
             <div className={`px-6 z-20 transition-all duration-500 ${aiRecipes.length > 0 ? 'sticky top-0 bg-slate-50/95 backdrop-blur-md pt-4 pb-4 border-b border-slate-200 shadow-sm' : 'pb-6'}`}>
                 <div className="max-w-3xl mx-auto space-y-4">
                     <div className="relative flex items-center group">
-                        <div className="absolute left-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors"><ShoppingBag size={22}/></div>
+                        <div className="absolute left-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors"><ShoppingBag size={22} /></div>
                         <input type="text" className="w-full py-4 pl-12 pr-36 bg-white rounded-2xl border border-slate-200 shadow-sm focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none font-medium text-lg text-slate-700 placeholder:text-slate-400 transition-all" placeholder="e.g. Maize flour, beef, sukuma wiki..." value={pantryInput} onChange={(e) => setPantryInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateRecipes(preferences)} />
-                        <button onClick={() => handleGenerateRecipes(preferences)} disabled={isGenerating || !pantryInput.trim()} className="absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-6 rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center gap-2 transition-all shadow-md active:scale-95">{isGenerating ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20}/>}</button>
+                        <button onClick={() => handleGenerateRecipes(preferences)} disabled={isGenerating || !pantryInput.trim()} className="absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-6 rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center gap-2 transition-all shadow-md active:scale-95">{isGenerating ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</button>
                     </div>
                     <div className="flex flex-col gap-3">
                         <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
@@ -204,19 +204,19 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        let isMounted = true; 
+        let isMounted = true;
         const refreshPantry = async () => {
             setIsLoading(true);
             try {
                 const token = localStorage.getItem('token');
                 const res = await axios.get(`${API_URL}/user/profile`, { headers: { Authorization: `Bearer ${token}` } });
                 if (isMounted) setPantry(res.data.data.pantry || []);
-            } catch (err) { console.error("Failed to refresh pantry:", err); } 
+            } catch (err) { console.error("Failed to refresh pantry:", err); }
             finally { if (isMounted) setIsLoading(false); }
         };
         refreshPantry();
         return () => { isMounted = false; };
-    }, []); 
+    }, []);
 
     const addItem = () => {
         if (!newItem.trim()) return;
@@ -315,10 +315,10 @@ const ProfileTab = ({ user, handleUpdateProfile, handleImageUpload }) => {
                 <p className="text-slate-500">{editForm.email}</p>
             </div>
             <div className="space-y-6">
-                <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Bio</label><textarea className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 outline-none" rows="3" value={editForm.bio || ''} onChange={e => setEditForm({...editForm, bio: e.target.value})}></textarea></div>
+                <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Bio</label><textarea className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 outline-none" rows="3" value={editForm.bio || ''} onChange={e => setEditForm({ ...editForm, bio: e.target.value })}></textarea></div>
                 <div className="grid grid-cols-2 gap-6">
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Goal</label><select value={editForm.goals || 'balanced'} onChange={e => setEditForm({...editForm, goals: e.target.value})} className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 outline-none"><option value="balanced">Balanced Diet</option><option value="weight-loss">Weight Loss</option><option value="muscle">Muscle Gain</option></select></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Calorie Goal</label><input type="number" value={editForm.calorieGoal || 2000} onChange={e => setEditForm({...editForm, calorieGoal: parseInt(e.target.value) || 2000})} className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 outline-none" /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Goal</label><select value={editForm.goals || 'balanced'} onChange={e => setEditForm({ ...editForm, goals: e.target.value })} className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 outline-none"><option value="balanced">Balanced Diet</option><option value="weight-loss">Weight Loss</option><option value="muscle">Muscle Gain</option></select></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Calorie Goal</label><input type="number" value={editForm.calorieGoal || 2000} onChange={e => setEditForm({ ...editForm, calorieGoal: parseInt(e.target.value) || 2000 })} className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 outline-none" /></div>
                 </div>
             </div>
         </div>
@@ -329,15 +329,15 @@ export default function Dashboard() {
     const [activeTab, setActiveTab] = useState('overview');
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-    
+
     const [user, setUser] = useState({ username: 'User', email: '', profileImage: null, pantry: [] });
     const [pantryInput, setPantryInput] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [aiRecipes, setAiRecipes] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [toast, setToast] = useState(null);
-    
-    const mainRef = useRef(null); 
+
+    const mainRef = useRef(null);
     const navigate = useNavigate();
 
     const showToast = (message, type = 'success') => {
@@ -348,8 +348,8 @@ export default function Dashboard() {
         const handleResize = () => {
             const mobile = window.innerWidth < 768;
             setIsMobile(mobile);
-            if (!mobile) setSidebarOpen(true); 
-            else setSidebarOpen(false); 
+            if (!mobile) setSidebarOpen(true);
+            else setSidebarOpen(false);
         };
         window.addEventListener('resize', handleResize);
         handleResize();
@@ -399,9 +399,9 @@ export default function Dashboard() {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
             });
             if (res.data.success && showSuccess) showToast("Saved!", "success");
-        } catch (err) { 
-            console.error("Profile update error:", err); 
-            showToast(err.response?.data?.message || "Failed to save changes", "error"); 
+        } catch (err) {
+            console.error("Profile update error:", err);
+            showToast(err.response?.data?.message || "Failed to save changes", "error");
         }
     };
 
@@ -420,11 +420,11 @@ export default function Dashboard() {
     const handleGenerateRecipes = async (preferences = {}) => {
         if (!pantryInput.trim()) return;
         setIsGenerating(true);
-        setAiRecipes([]); 
+        setAiRecipes([]);
         try {
             const token = localStorage.getItem('token');
             if (!token) { showToast('Please log in', 'error'); setIsGenerating(false); return; }
-            
+
             const res = await axios.post(`${API_URL}/recommend`, {
                 pantry: pantryInput,
                 userGoal: user.goals || 'balanced',
@@ -434,16 +434,16 @@ export default function Dashboard() {
                 dietaryRestrictions: preferences.dietaryRestrictions || [],
                 maxCalories: preferences.maxCalories || null
             }, { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } });
-            
+
             if (res.data.success) setAiRecipes(res.data.data);
-        } catch (err) { showToast(`Failed to generate recipes: ${err.message}`, "error"); } 
+        } catch (err) { showToast(`Failed to generate recipes: ${err.message}`, "error"); }
         finally { setIsGenerating(false); }
     };
 
     const handleNavClick = (tabId) => {
         setActiveTab(tabId);
         if (window.innerWidth < 768) setSidebarOpen(false);
-        if(mainRef.current) mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        if (mainRef.current) mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const renderContent = () => {
@@ -453,7 +453,7 @@ export default function Dashboard() {
             case 'leaderboard': return <Leaderboard currentUser={user} />;
             case 'grocery': return <GroceryList user={user} handleUpdateProfile={handleUpdateProfile} />;
             case 'ai-chef': return <AIChefTab pantryInput={pantryInput} setPantryInput={setPantryInput} handleGenerateRecipes={handleGenerateRecipes} isGenerating={isGenerating} aiRecipes={aiRecipes} setAiRecipes={setAiRecipes} user={user} />;
-            case 'pantry': return <PantryTab pantry={user.pantry} setPantry={(p) => setUser({...user, pantry: p})} handleUpdateProfile={handleUpdateProfile} user={user} setActiveTab={setActiveTab} setPantryInput={setPantryInput} />;
+            case 'pantry': return <PantryTab pantry={user.pantry} setPantry={(p) => setUser({ ...user, pantry: p })} handleUpdateProfile={handleUpdateProfile} user={user} setActiveTab={setActiveTab} setPantryInput={setPantryInput} />;
             case 'profile': return <ProfileTab user={user} handleUpdateProfile={handleUpdateProfile} handleImageUpload={handleImageUpload} />;
             default: return <OverviewTab user={user} setActiveTab={setActiveTab} showToast={showToast} refreshUserData={refreshUserData} />;
         }
@@ -469,53 +469,89 @@ export default function Dashboard() {
                 <div className="h-24 flex items-center px-6 border-b border-slate-800/50 justify-between">
                     <div className="flex items-center gap-3 text-white font-bold text-xl tracking-tight overflow-hidden whitespace-nowrap">
                         <div className="bg-emerald-500 p-2 rounded-xl shadow-lg shadow-emerald-900/50 flex-shrink-0"><ChefHat className="text-white" size={24} /></div>
-                        {(sidebarOpen || window.innerWidth < 768) && <span>NutriFit</span>}
+                        <span className={`transition-all duration-300 overflow-hidden ${(!sidebarOpen && window.innerWidth >= 768) ? 'max-w-0 opacity-0' : 'max-w-[150px] opacity-100'}`}>NutriFit</span>
                     </div>
                     {window.innerWidth < 768 && <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>}
                 </div>
 
                 <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto custom-scrollbar">
                     {[{ id: 'overview', icon: LayoutDashboard, label: 'Overview' }, { id: 'nutrition', icon: Activity, label: 'Nutrition' }, { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' }, { id: 'ai-chef', icon: ChefHat, label: 'AI Assistant' }, { id: 'grocery', icon: ListChecks, label: 'Grocery' }, { id: 'pantry', icon: ShoppingBag, label: 'My Pantry' }, { id: 'profile', icon: User, label: 'Settings' }].map((item) => (
-                        <button key={item.id} onClick={() => handleNavClick(item.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group whitespace-nowrap ${activeTab === item.id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'hover:bg-white/5 hover:text-white'}`}>
+                        <button key={item.id} onClick={() => handleNavClick(item.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group whitespace-nowrap overflow-hidden ${activeTab === item.id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'hover:bg-white/5 hover:text-white'}`}>
                             <item.icon size={22} className="flex-shrink-0" />
-                            {(sidebarOpen || window.innerWidth < 768) && <span className="font-medium">{item.label}</span>}
+                            <span className={`font-medium overflow-hidden transition-all duration-300 ${(!sidebarOpen && window.innerWidth >= 768) ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'}`}>{item.label}</span>
                         </button>
                     ))}
                 </nav>
                 <div className="p-4 border-t border-slate-800/50">
-                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-colors whitespace-nowrap">
+                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-colors whitespace-nowrap overflow-hidden">
                         <LogOut size={22} className="flex-shrink-0" />
-                        {(sidebarOpen || window.innerWidth < 768) && <span className="font-medium">Log Out</span>}
+                        <span className={`font-medium overflow-hidden transition-all duration-300 ${(!sidebarOpen && window.innerWidth >= 768) ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'}`}>Log Out</span>
                     </button>
                 </div>
             </aside>
 
             <div className="flex-1 flex flex-col h-full overflow-hidden relative w-full bg-slate-50 z-0">
-                <header className="h-20 bg-white border-b border-slate-200 flex justify-between items-center px-4 md:px-8 z-20 flex-shrink-0">
+                <header className="h-20 bg-white/80 backdrop-blur-lg border-b border-slate-200/50 flex justify-between items-center px-6 md:px-10 z-20 flex-shrink-0 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors md:hidden"><Menu size={24} /></button>
+                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2.5 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors md:hidden"><Menu size={24} /></button>
                         <div className="relative hidden md:block group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
-                            <input type="text" placeholder="Search..." className="pl-12 pr-4 py-2.5 bg-slate-100 rounded-xl text-sm w-64 lg:w-80 focus:w-96 transition-all outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                            <input type="text" placeholder="Search..." className="pl-12 pr-4 py-3 bg-slate-100/80 rounded-2xl text-sm w-64 lg:w-96 focus:w-[28rem] transition-all duration-300 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:bg-white border border-transparent focus:border-emerald-200" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"><Bell size={24} /><span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span></button>
-                        <div className="w-10 h-10 bg-emerald-100 rounded-xl border-2 border-white shadow-sm flex items-center justify-center text-emerald-700 font-bold overflow-hidden cursor-pointer active:scale-95 transition-transform" onClick={() => setActiveTab('profile')}>
-                            {user.profileImage ? <img src={user.profileImage} alt="avatar" className="w-full h-full object-cover" /> : user.username.charAt(0)}
+                    <div className="flex items-center gap-6">
+                        <button className="relative p-2.5 text-slate-500 hover:bg-slate-100/80 rounded-xl transition-all hover:text-emerald-600"><Bell size={22} strokeWidth={2.5} /><span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span></button>
+                        <div className="w-11 h-11 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-2xl border-2 border-white shadow-sm flex items-center justify-center text-emerald-700 font-bold overflow-hidden cursor-pointer active:scale-95 transition-all hover:shadow-md" onClick={() => setActiveTab('profile')}>
+                            {user.profileImage ? <img src={user.profileImage} alt="avatar" className="w-full h-full object-cover" /> : user.username.charAt(0).toUpperCase()}
                         </div>
                     </div>
                 </header>
 
-                <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-50 relative scroll-smooth">
-                    <div className="p-4 md:p-8 w-full max-w-7xl mx-auto">
+                <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-50/50 relative scroll-smooth flex flex-col pt-6">
+                    <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 pb-12">
                         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
                         {renderContent()}
-                        <div className="mt-24 mb-8">
-                            <Footer onNavigate={setActiveTab} />
+                    </div>
+                    {/* Fixed global footer positioned neatly at the bottom of the scrolling area */}
+                    <div className="bg-white/80 backdrop-blur-md border-t border-slate-200/50 pt-8 pb-20 md:pb-8 px-6 mt-auto">
+                        <div className="max-w-7xl mx-auto text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4">
+                            <p className="text-slate-500 text-sm font-medium">© 2024 NutriFit. Build healthier habits.</p>
+                            <div className="flex gap-6 text-sm font-bold text-slate-400">
+                                <button onClick={() => setActiveTab('profile')} className="hover:text-emerald-600 transition-colors">Settings</button>
+                                <button onClick={handleLogout} className="hover:text-red-500 transition-colors">Log Out</button>
+                            </div>
                         </div>
                     </div>
                 </main>
+
+                {/* Mobile Bottom Tab Bar */}
+                <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+                    <div className="flex justify-around items-center h-16 px-2">
+                        {[
+                            { id: 'overview', icon: LayoutDashboard, label: 'Home' },
+                            { id: 'nutrition', icon: Activity, label: 'Nutrition' },
+                            { id: 'ai-chef', icon: ChefHat, label: 'AI Chef' },
+                            { id: 'pantry', icon: ShoppingBag, label: 'Pantry' },
+                            { id: 'profile', icon: User, label: 'Profile' }
+                        ].map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => handleNavClick(item.id)}
+                                className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 rounded-xl transition-all ${activeTab === item.id
+                                    ? 'text-emerald-600'
+                                    : 'text-slate-400 hover:text-slate-600'
+                                    }`}
+                            >
+                                <div className={`p-1 rounded-lg transition-all ${activeTab === item.id ? 'bg-emerald-50' : ''}`}>
+                                    <item.icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} />
+                                </div>
+                                <span className={`text-[10px] font-semibold ${activeTab === item.id ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                    {item.label}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </nav>
             </div>
         </div>
     );
