@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const errorHandler = require('./middleware/errorHandler');
 
 // Load environment variables
@@ -10,7 +11,7 @@ dotenv.config();
 const app = express();
 
 // CORS configuration - Allow Authorization header
-const corsOrigins = process.env.CORS_ORIGIN 
+const corsOrigins = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
     : ['http://localhost:3000'];
 
@@ -50,25 +51,22 @@ app.use('/api/chat', require('./routes/chat'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         timestamp: new Date().toISOString(),
         message: 'NutriFit API is running'
     });
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
-    res.json({ 
-        message: 'Welcome to NutriFit API',
-        version: '1.0.0',
-        endpoints: {
-            auth: '/api/auth',
-            user: '/api/user',
-            recipes: '/api/recipes',
-            recommend: '/api/recommend'
-        }
-    });
+
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../client/build')));
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
 
 // Error handler middleware (must be last)
@@ -76,13 +74,13 @@ app.use(errorHandler);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/nutrifit')
-.then(() => {
-    console.log('✅ MongoDB connected successfully');
-})
-.catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
-});
+    .then(() => {
+        console.log('✅ MongoDB connected successfully');
+    })
+    .catch(err => {
+        console.error('❌ MongoDB connection error:', err.message);
+        process.exit(1);
+    });
 
 const PORT = process.env.PORT || 5000;
 
