@@ -19,7 +19,7 @@ ENV NODE_ENV=production
 
 # Copy backend package files and install dependencies
 COPY server/package*.json ./server/
-RUN cd server && npm ci --only=production
+RUN cd server && npm install --omit=dev
 
 # Copy backend source code
 COPY server/ ./server/
