@@ -1,9 +1,11 @@
 const GroceryList = require('../models/GroceryList');
 const MealPlan = require('../models/MealPlan');
 const Recipe = require('../models/Recipe');
+const User = require('../models/User');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 /**
- * Generate grocery list from meal plan or recipes
+ * Generate grocery list from meal plan, recipes, or AI
  */
 exports.generateGroceryList = async (req, res, next) => {
     try {
@@ -13,26 +15,40 @@ exports.generateGroceryList = async (req, res, next) => {
         let items = [];
         const ingredientMap = {};
 
-        // Get ingredients from meal plan
-        if (mealPlanId) {
-            const mealPlan = await MealPlan.findOne({ _id: mealPlanId, userId });
+        let targetMealPlanId = mealPlanId;
+
+        // Auto-find latest meal plan if not provided
+        if (!targetMealPlanId && (!recipeIds || recipeIds.length === 0)) {
+            const latestMealPlan = await MealPlan.findOne({ userId, isActive: true }).sort({ startDate: -1 });
+            if (latestMealPlan) {
+                targetMealPlanId = latestMealPlan._id;
+            }
+        }
+
+        // 1. Get ingredients from meal plan
+        if (targetMealPlanId) {
+            const mealPlan = await MealPlan.findOne({ _id: targetMealPlanId, userId });
             if (mealPlan) {
                 mealPlan.meals.forEach(meal => {
                     meal.ingredients?.forEach(ing => {
-                        const key = ing.name?.toLowerCase() || ing.toLowerCase();
+                        const ingName = typeof ing === 'string' ? ing : ing.name || ing;
+                        const key = ingName.toLowerCase();
                         if (!ingredientMap[key]) {
                             ingredientMap[key] = {
-                                name: ing.name || ing,
+                                name: ingName,
                                 quantity: ing.amount || '1',
-                                category: categorizeIngredient(ing.name || ing)
+                                category: categorizeIngredient(ingName)
                             };
+                        } else {
+                            const currentQty = parseInt(ingredientMap[key].quantity) || 1;
+                            ingredientMap[key].quantity = (currentQty + 1).toString();
                         }
                     });
                 });
             }
         }
 
-        // Get ingredients from recipes
+        // 2. Get ingredients from recipes
         if (recipeIds && recipeIds.length > 0) {
             const recipes = await Recipe.find({ _id: { $in: recipeIds }, userId });
             recipes.forEach(recipe => {
@@ -46,7 +62,6 @@ exports.generateGroceryList = async (req, res, next) => {
                             category: categorizeIngredient(ingName)
                         };
                     } else {
-                        // Increase quantity if already exists
                         const currentQty = parseInt(ingredientMap[key].quantity) || 1;
                         ingredientMap[key].quantity = (currentQty + 1).toString();
                     }
@@ -54,20 +69,65 @@ exports.generateGroceryList = async (req, res, next) => {
             });
         }
 
-        // Convert to array
         items = Object.values(ingredientMap).map(item => ({
             ...item,
             estimatedCost: estimateCost(item.name, item.category)
         }));
 
+        // 3. AI GENERATION IF NO ITEMS FOUND
+        if (items.length === 0) {
+            const user = await User.findById(userId);
+            const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+            
+            if (genAI) {
+                const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+                const prompt = `
+                    Act as a professional nutritionist. The user's goal is ${user?.goals || 'balanced'} and their budget is ${user?.budgetLevel || 'medium'}. 
+                    They need a healthy weekly grocery list.
+                    Return a JSON array of 12 essential grocery items.
+                    Format exactly like this (no markdown, just raw JSON array):
+                    [
+                        { "name": "Item Name", "quantity": "amount (e.g., 2 lbs)", "category": "produce/meat/dairy/pantry/frozen/other" }
+                    ]
+                `;
+                
+                try {
+                    const result = await model.generateContent(prompt);
+                    let text = result.response.text().trim();
+                    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const aiItems = JSON.parse(text);
+                    
+                    items = aiItems.map(item => ({
+                        name: item.name,
+                        quantity: item.quantity,
+                        category: categorizeIngredient(item.category || item.name),
+                        estimatedCost: estimateCost(item.name, item.category || item.name)
+                    }));
+                } catch(e) {
+                    console.error("AI Parse Error:", e);
+                    items = [
+                        { name: 'Oats', quantity: '1 box', category: 'pantry', estimatedCost: 3 },
+                        { name: 'Chicken Breast', quantity: '2 lbs', category: 'meat', estimatedCost: 10 },
+                        { name: 'Broccoli', quantity: '2 heads', category: 'produce', estimatedCost: 4 }
+                    ];
+                }
+            } else {
+                items = [
+                    { name: 'Brown Rice', quantity: '1 bag', category: 'pantry', estimatedCost: 4 },
+                    { name: 'Eggs', quantity: '1 dozen', category: 'dairy', estimatedCost: 3 },
+                    { name: 'Spinach', quantity: '1 bunch', category: 'produce', estimatedCost: 2 }
+                ];
+            }
+        }
+
         const totalEstimatedCost = items.reduce((sum, item) => sum + item.estimatedCost, 0);
 
         const groceryList = new GroceryList({
             userId,
-            name: name || 'My Grocery List',
+            name: name || 'Auto-Generated Plan',
             items,
             totalEstimatedCost,
-            mealPlanId: mealPlanId || null
+            mealPlanId: targetMealPlanId || null
         });
 
         await groceryList.save();
