@@ -43,14 +43,34 @@ function Reveal({ children, className = '', delay = 0 }) {
 export default function Landing() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [activeTab, setActiveTab] = useState('meal');
+    const [activeSection, setActiveSection] = useState('plans');
 
+    // Scroll shadow on navbar
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 20);
         window.addEventListener('scroll', onScroll);
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
-    const plans = [
+    // Scroll-spy: update active nav pill based on visible section
+    useEffect(() => {
+        const ids = ['plans', 'meals', 'how-it-works', 'testimonials'];
+        const observers = [];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const obs = new IntersectionObserver(
+                ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
+                { rootMargin: '-40% 0px -50% 0px', threshold: 0 }
+            );
+            obs.observe(el);
+            observers.push(obs);
+        });
+        return () => observers.forEach(o => o.disconnect());
+    }, []);
+
+    const mealPlans = [
         {
             title: 'Weight Loss',
             desc: 'Calorie-deficit meals with balanced nutrition to help you shed weight sustainably.',
@@ -79,6 +99,38 @@ export default function Landing() {
             icon: Heart,
         },
     ];
+
+    const customDiets = [
+        {
+            title: 'Keto Diet',
+            desc: 'High-fat, very low-carb meals to shift your body into a fat-burning state.',
+            cal: '1,500 - 2,000 Cal',
+            tag: 'Low Carb',
+            price: '500',
+            img: '/images/meal-muscle.png',
+            icon: Flame,
+        },
+        {
+            title: 'Vegan Plan',
+            desc: '100% plant-based meals packed with nutrients, fiber, and natural goodness.',
+            cal: '1,600 - 2,100 Cal',
+            tag: 'Plant-Based',
+            price: '450',
+            img: '/images/meal-healthy.png',
+            icon: Leaf,
+        },
+        {
+            title: 'Intermittent Fasting',
+            desc: 'Structured eating windows with optimized meals for maximum results.',
+            cal: '1,400 - 1,800 Cal',
+            tag: 'Time-Restricted',
+            price: '400',
+            img: '/images/meal-weight-loss.png',
+            icon: Target,
+        },
+    ];
+
+    const plans = activeTab === 'meal' ? mealPlans : customDiets;
 
     const steps = [
         {
@@ -154,10 +206,10 @@ export default function Landing() {
                     </Link>
 
                     <div className="nav-links" id="nav-links">
-                        <a href="#plans" className="nav-pill active">Plans</a>
-                        <a href="#meals" className="nav-pill">Meals</a>
-                        <a href="#how-it-works" className="nav-pill">How it Works</a>
-                        <a href="#testimonials" className="nav-pill">Nutritionists</a>
+                        <a href="#plans" className={`nav-pill ${activeSection === 'plans' ? 'active' : ''}`}>Plans</a>
+                        <a href="#meals" className={`nav-pill ${activeSection === 'meals' ? 'active' : ''}`}>Meals</a>
+                        <a href="#how-it-works" className={`nav-pill ${activeSection === 'how-it-works' ? 'active' : ''}`}>How it Works</a>
+                        <a href="#testimonials" className={`nav-pill ${activeSection === 'testimonials' ? 'active' : ''}`}>Nutritionists</a>
                     </div>
 
                     <div className="nav-actions" id="nav-actions">
@@ -228,7 +280,7 @@ export default function Landing() {
                                     <div className="social-stars">
                                         {[...Array(5)].map((_, i) => <Star key={i} size={14} className="star-filled" />)}
                                     </div>
-                                    <span>100+ happy users</span>
+                                    <span>20+ happy users</span>
                                 </div>
                             </div>
                         </Reveal>
@@ -301,8 +353,8 @@ export default function Landing() {
 
                     <Reveal delay={100}>
                         <div className="plans-tabs" id="meals">
-                            <button className="plan-tab active">Meal Plans</button>
-                            <button className="plan-tab">Custom Diets</button>
+                            <button className={`plan-tab ${activeTab === 'meal' ? 'active' : ''}`} onClick={() => setActiveTab('meal')}>Meal Plans</button>
+                            <button className={`plan-tab ${activeTab === 'custom' ? 'active' : ''}`} onClick={() => setActiveTab('custom')}>Custom Diets</button>
                         </div>
                     </Reveal>
 
