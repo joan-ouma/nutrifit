@@ -121,6 +121,8 @@ const OverviewTab = ({ user, setActiveTab, showToast, refreshUserData }) => {
                         <div className="text-xl font-bold text-slate-900">{streakDays} <span className="text-sm font-normal text-slate-500">days</span></div>
                     </div>
                 </div>
+                </div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             </div>
 
             {/* DASHBOARD WIDGETS */}
