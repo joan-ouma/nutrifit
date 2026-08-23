@@ -111,12 +111,13 @@ export default function MealLog({ meals, dailyLog, onMealAdded, onMealDeleted, s
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Name</label>
                                 <div className="relative">
                                     <input required type="text" value={mealForm.name} onChange={(e) => setMealForm({...mealForm, name: e.target.value})} 
-                                        className="w-full p-3 pr-10 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium text-slate-700" 
+                                        className="w-full p-3 pr-28 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium text-slate-700" 
                                         placeholder="e.g. Oatmeal & Berries" />
                                     <button type="button" onClick={handleAutoFill} disabled={!mealForm.name.trim() || isEstimating} 
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-bold flex items-center gap-1 text-emerald-700 bg-emerald-100 rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50"
                                         title="Auto-fill Macros">
-                                        {isEstimating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                                        {isEstimating ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                                        {isEstimating ? 'Loading' : 'Auto-Fill'}
                                     </button>
                                 </div>
                             </div>
