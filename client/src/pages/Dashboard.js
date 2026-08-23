@@ -3,7 +3,7 @@ import {
     LayoutDashboard, ChefHat, ShoppingBag, User, LogOut, Search, Bell,
     Menu, X, Loader2, Flame, Camera, Save, Plus, Trash2, Sparkles,
     Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle, Droplet, Leaf,
-    Coffee, Apple, Salad, CupSoda, Milk, ChevronLeft, ChevronRight
+    Coffee, Apple, Salad, CupSoda, Milk, ChevronLeft, ChevronRight, Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
