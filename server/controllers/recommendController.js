@@ -20,7 +20,7 @@ exports.generateRecipes = async (req, res) => {
             return res.status(500).json({ success: false, error: "Server Error: API Key Missing" });
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
         const prompt = `
             You are a professional Michelin-star chef. Create 2 detailed recipes using these ingredients: ${pantry}.
@@ -100,7 +100,7 @@ exports.estimateGroceryItem = async (req, res) => {
             });
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
         const prompt = `
             Act as a grocery price database.
