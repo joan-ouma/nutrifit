@@ -13,7 +13,7 @@ const app = express();
 // CORS configuration - Allow Authorization header
 const corsOrigins = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-    : ['http://localhost:3000'];
+    : ['http://localhost:3000', 'https://nutrifit-3ue8.onrender.com'];
 
 app.use(cors({
     origin: (origin, callback) => {
