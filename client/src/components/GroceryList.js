@@ -105,9 +105,8 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
         const boughtItems = currentList.items.filter(i => i.checked);
         if (boughtItems.length === 0) return;
 
-        if (window.confirm(`Checkout ${boughtItems.length} items to Pantry?`)) {
-            setIsSaving(true);
-            try {
+        setIsSaving(true);
+        try {
                 const token = localStorage.getItem('token');
                 
                 // 1. Fetch FRESH user profile
@@ -136,15 +135,11 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
                 const remainingItems = currentList.items.filter(i => !i.checked);
                 setCurrentList({ ...currentList, items: remainingItems });
 
-                alert(`Success! Added ${boughtItems.length} items to Pantry.`);
-
             } catch (err) {
                 console.error("Checkout Error:", err);
-                alert("Failed to update pantry. Check connection.");
             } finally {
                 setIsSaving(false);
             }
-        }
     };
 
     // --- 4. RENDER HELPERS ---
@@ -241,7 +236,6 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
                                 
                                 <div className="flex-1">
                                     <div className="font-bold text-slate-800 text-lg">{item.name}</div>
-                                    <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">{item.category}</div>
                                 </div>
 
                                 <div className="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-200">
