@@ -471,6 +471,14 @@ export default function Dashboard() {
             )}
 
             <aside className={`fixed md:relative top-0 bottom-0 left-0 z-40 bg-slate-50/50 border-r border-slate-200 transition-all duration-300 ease-in-out flex flex-col py-6 px-4 gap-6 ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0 md:w-[88px]'}`}>
+                {/* Floating Desktop Toggle */}
+                <button 
+                    onClick={() => setSidebarOpen(!sidebarOpen)} 
+                    className="hidden md:flex absolute -right-3.5 top-9 bg-white border border-slate-200 shadow-sm rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 z-50 transition-all hover:scale-110"
+                >
+                    {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+                </button>
+
                 {/* Logo Section */}
                 <div className={`flex items-center ${sidebarOpen ? 'justify-between px-2' : 'justify-center'}`}>
                     <div className={`bg-white shadow-sm border border-slate-100 flex items-center p-1.5 transition-all duration-300 overflow-hidden ${sidebarOpen ? 'w-full gap-3 px-3 rounded-[24px]' : 'w-[56px] h-[56px] justify-center rounded-full mx-auto'}`}>
@@ -504,10 +512,7 @@ export default function Dashboard() {
                         <User size={20} strokeWidth={activeTab === 'profile' ? 2.5 : 2} className="flex-shrink-0" />
                         <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Settings</span>
                     </button>
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className={`hidden md:flex items-center gap-3 p-3 rounded-full transition-all group whitespace-nowrap overflow-hidden ${sidebarOpen ? 'w-full px-4' : 'w-10 h-10 justify-center'} text-slate-400 hover:bg-slate-50 hover:text-slate-900`}>
-                        {sidebarOpen ? <ChevronLeft size={20} strokeWidth={2} className="flex-shrink-0" /> : <ChevronRight size={20} strokeWidth={2} className="flex-shrink-0" />}
-                        <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Collapse</span>
-                    </button>
+
                     <button onClick={handleLogout} className={`flex items-center gap-3 p-3 rounded-full transition-all group whitespace-nowrap overflow-hidden ${sidebarOpen ? 'w-full px-4' : 'w-10 h-10 justify-center'} text-slate-400 hover:bg-red-50 hover:text-red-500`}>
                         <LogOut size={20} className="flex-shrink-0" />
                         <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Log Out</span>
