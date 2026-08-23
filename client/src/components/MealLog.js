@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Utensils, Flame, Clock, ChevronDown, ChevronUp } from 'lucide-react';
-import { logMeal, deleteMeal } from '../api';
+import { Plus, Trash2, Utensils, Flame, Clock, ChevronDown, ChevronUp, Wand2, Loader2 } from 'lucide-react';
+import { logMeal, deleteMeal, estimateMealNutrition } from '../api';
 
 export default function MealLog({ meals, dailyLog, onMealAdded, onMealDeleted, selectedDate }) {
     const [showAddForm, setShowAddForm] = useState(false);
@@ -12,6 +12,30 @@ export default function MealLog({ meals, dailyLog, onMealAdded, onMealDeleted, s
         notes: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isEstimating, setIsEstimating] = useState(false);
+
+    const handleAutoFill = async () => {
+        if (!mealForm.name.trim()) return;
+        setIsEstimating(true);
+        try {
+            const response = await estimateMealNutrition(mealForm.name);
+            if (response.success && response.data) {
+                setMealForm({
+                    ...mealForm,
+                    nutrition: {
+                        calories: response.data.calories || 0,
+                        protein: response.data.protein || 0,
+                        carbs: response.data.carbs || 0,
+                        fats: response.data.fats || 0
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Failed to estimate macros:", error);
+        } finally {
+            setIsEstimating(false);
+        }
+    };
 
     // Professional Styling Config
     const mealConfig = {
@@ -85,9 +109,16 @@ export default function MealLog({ meals, dailyLog, onMealAdded, onMealDeleted, s
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Name</label>
-                                <input required type="text" value={mealForm.name} onChange={(e) => setMealForm({...mealForm, name: e.target.value})} 
-                                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium text-slate-700" 
-                                    placeholder="e.g. Oatmeal & Berries" />
+                                <div className="relative">
+                                    <input required type="text" value={mealForm.name} onChange={(e) => setMealForm({...mealForm, name: e.target.value})} 
+                                        className="w-full p-3 pr-10 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium text-slate-700" 
+                                        placeholder="e.g. Oatmeal & Berries" />
+                                    <button type="button" onClick={handleAutoFill} disabled={!mealForm.name.trim() || isEstimating} 
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                                        title="Auto-fill Macros">
+                                        {isEstimating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Time</label>

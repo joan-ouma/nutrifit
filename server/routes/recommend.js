@@ -13,6 +13,9 @@ router.post('/personalized', auth, recommendController.getPersonalizedRecommenda
 //generate estimate prizes 
 router.post('/estimate', auth, recommendController.estimateGroceryItem);
 
+// estimate meal nutrition
+router.post('/estimate-meal', auth, recommendController.estimateMealNutrition);
+
 // Generate recipes from pantry (requires auth)
 router.post('/', auth, recommendController.generateRecipes);
 

@@ -20,6 +20,24 @@ exports.generateRecipes = async (req, res) => {
             return res.status(500).json({ success: false, error: "Server Error: API Key Missing" });
         }
 
+        // Log search history for the user
+        try {
+            const userId = req.user._id;
+            const user = await User.findById(userId);
+            if (user) {
+                user.searchHistory.push({
+                    query: `${pantry} (${cuisine || 'Any'} Cuisine, ${mealType || 'Any'} Meal)`
+                });
+                if (user.searchHistory.length > 20) {
+                    user.searchHistory.shift(); // Keep only last 20 searches
+                }
+                await user.save();
+            }
+        } catch (historyErr) {
+            console.error("Failed to log search history:", historyErr);
+            // Non-blocking, continue generating recipes
+        }
+
         const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
         const prompt = `
@@ -128,6 +146,48 @@ exports.estimateGroceryItem = async (req, res) => {
         res.json({ 
             success: true, 
             data: { estimatedCost: 2.99, category: 'other', unit: 'item' } 
+        });
+    }
+};
+
+exports.estimateMealNutrition = async (req, res) => {
+    try {
+        const { mealName } = req.body;
+        if (!mealName) return res.status(400).json({ error: "Meal name required" });
+
+        if (!genAI) {
+            return res.json({ 
+                success: true, 
+                data: { calories: 350, protein: 15, carbs: 40, fats: 15 } 
+            });
+        }
+
+        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+
+        const prompt = `
+            Act as an expert nutritionist. Estimate the nutritional value for a typical serving of: "${mealName}".
+            Return raw JSON only in this exact format (numbers only, no units):
+            { "calories": 350, "protein": 15, "carbs": 40, "fats": 15 }
+        `;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const cleanText = text.replace(/```json|```/g, '').trim();
+        
+        let data;
+        try {
+            data = JSON.parse(cleanText);
+        } catch (e) {
+            data = { calories: 350, protein: 15, carbs: 40, fats: 15 };
+        }
+
+        res.json({ success: true, data });
+
+    } catch (error) {
+        console.error("Meal Estimation Error:", error.message);
+        res.json({ 
+            success: true, 
+            data: { calories: 350, protein: 15, carbs: 40, fats: 15 } 
         });
     }
 };

@@ -37,6 +37,19 @@ export const getRecommendations = async (pantryInput, user) => {
     }
 };
 
+export const estimateMealNutrition = async (mealName) => {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await axios.post(`${API_URL}/recommend/estimate-meal`, { mealName }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return res.data;
+    } catch (error) {
+        console.error("Error estimating meal:", error);
+        throw error;
+    }
+};
+
 // Meal Tracking API
 export const logMeal = async (mealData) => {
     try {

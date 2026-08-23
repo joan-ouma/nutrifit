@@ -217,6 +217,28 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
             </div>
             <div className="flex-1 px-6 pb-8 overflow-y-auto custom-scrollbar">
                 {isGenerating && <div className="flex flex-col items-center justify-center py-12"><Loader2 size={32} className="animate-spin text-[#16a34a] mb-4" /><h3 className="font-semibold text-slate-800">Searching recipes...</h3></div>}
+                
+                {!isGenerating && aiRecipes.length === 0 && user?.searchHistory?.length > 0 && (
+                    <div className="max-w-3xl mx-auto mt-4">
+                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 pl-1">Recent Searches</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {user.searchHistory.slice().reverse().slice(0, 8).map((history, idx) => (
+                                <button 
+                                    key={idx} 
+                                    onClick={() => {
+                                        const mainQuery = history.query.split(' (')[0];
+                                        setPantryInput(mainQuery);
+                                    }}
+                                    className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-md text-xs font-medium hover:border-slate-300 shadow-sm transition-all flex items-center gap-1.5"
+                                >
+                                    <Clock size={12} className="text-slate-400" />
+                                    {history.query}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {!isGenerating && aiRecipes.length > 0 && <div>
                     <div className="flex justify-between items-end mb-6 border-b border-slate-200 pb-2">
                         <h3 className="font-bold text-slate-900 text-lg">Results</h3>
