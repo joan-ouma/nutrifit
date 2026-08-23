@@ -27,7 +27,7 @@ exports.generateGroceryList = async (req, res, next) => {
 
         // Fetch user for pantry, goals, and history
         const user = await User.findById(userId).populate('favoriteRecipes');
-        const userPantry = (user?.pantry || []).map(i => i.toLowerCase());
+        const userPantry = (user?.pantry || []).map(i => (typeof i === 'string' ? i : (i.name || '')).toLowerCase());
 
         // 1. Get ingredients from meal plan
         if (targetMealPlanId) {
@@ -36,6 +36,8 @@ exports.generateGroceryList = async (req, res, next) => {
                 mealPlan.meals.forEach(meal => {
                     meal.ingredients?.forEach(ing => {
                         const ingName = typeof ing === 'string' ? ing : ing.name || ing;
+                        // Flatten pantry to just lowercase names for easy checking
+                        const pantryNames = userPantry.map(item => (typeof item === 'string' ? item : (item.name || '')).toLowerCase());
                         const key = ingName.toLowerCase();
                         if (!ingredientMap[key]) {
                             ingredientMap[key] = {
@@ -87,7 +89,7 @@ exports.generateGroceryList = async (req, res, next) => {
                 const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
                 
                 const favoriteMeals = user?.favoriteRecipes?.map(r => r.name).join(', ') || 'No specific history';
-                const currentPantryStr = user?.pantry?.join(', ') || 'Empty';
+                const currentPantryStr = user?.pantry?.map(i => typeof i === 'string' ? i : i.name).join(', ') || 'Empty';
                 
                 const prompt = `
                     Act as a professional nutritionist and smart shopper. 
