@@ -3,6 +3,10 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Build argument for API URL
+ARG REACT_APP_API_URL=https://nutrifit-backend-latest.onrender.com/api
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci || npm install
