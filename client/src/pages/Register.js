@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, ChefHat, ArrowLeft, User, Mail, Lock, ShieldCheck } from 'lucide-react';
+import { Loader2, Leaf, ArrowLeft, User, Mail, Lock, ShieldCheck } from 'lucide-react';
 import API_URL from '../config';
 import { useToastContext } from '../contexts/ToastContext';
 
@@ -84,10 +84,10 @@ export default function Register() {
                     {/* Logo */}
                     <div className="mb-8">
                         <div className="flex items-center gap-2.5 mb-8">
-                            <div className="bg-emerald-600 p-2 rounded-lg text-white">
-                                <ChefHat size={20} />
+                            <div className="bg-[#16a34a] p-2 rounded-lg text-white shadow-md shadow-green-200">
+                                <Leaf size={20} />
                             </div>
-                            <span className="font-bold text-xl text-slate-900 tracking-tight">NutriFit</span>
+                            <span className="font-bold text-2xl text-slate-900 tracking-tight">NutriFit</span>
                         </div>
                         <h1 className="text-2xl font-bold text-slate-900 mb-1">Create your account</h1>
                         <p className="text-slate-500 text-sm">Start your nutrition journey today</p>
@@ -162,7 +162,7 @@ export default function Register() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-slate-900 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                            className="w-full bg-[#16a34a] text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2 shadow-lg shadow-green-200"
                         >
                             {isLoading ? (
                                 <>

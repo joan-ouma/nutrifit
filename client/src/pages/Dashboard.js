@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     LayoutDashboard, ChefHat, ShoppingBag, User, LogOut, Search, Bell,
     Menu, X, Loader2, Flame, Camera, Save, Plus, Trash2, Sparkles,
-    Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle, Droplet
+    Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle, Droplet, Leaf
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -468,7 +468,7 @@ export default function Dashboard() {
             <aside className={`fixed md:relative top-0 bottom-0 left-0 z-40 bg-slate-900 text-slate-300 shadow-2xl transition-all duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0 md:w-20'}`}>
                 <div className="h-24 flex items-center px-6 border-b border-slate-800/50 justify-between">
                     <div className="flex items-center gap-3 text-white font-bold text-xl tracking-tight overflow-hidden whitespace-nowrap">
-                        <div className="bg-emerald-500 p-2 rounded-xl shadow-lg shadow-emerald-900/50 flex-shrink-0"><ChefHat className="text-white" size={24} /></div>
+                        <div className="bg-[#16a34a] p-2 rounded-xl shadow-lg shadow-green-900/50 flex-shrink-0"><Leaf className="text-white" size={24} /></div>
                         <span className={`transition-all duration-300 overflow-hidden ${(!sidebarOpen && window.innerWidth >= 768) ? 'max-w-0 opacity-0' : 'max-w-[150px] opacity-100'}`}>NutriFit</span>
                     </div>
                     {window.innerWidth < 768 && <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>}
@@ -476,7 +476,7 @@ export default function Dashboard() {
 
                 <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto custom-scrollbar">
                     {[{ id: 'overview', icon: LayoutDashboard, label: 'Overview' }, { id: 'nutrition', icon: Activity, label: 'Nutrition' }, { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' }, { id: 'ai-chef', icon: ChefHat, label: 'AI Assistant' }, { id: 'grocery', icon: ListChecks, label: 'Grocery' }, { id: 'pantry', icon: ShoppingBag, label: 'My Pantry' }, { id: 'profile', icon: User, label: 'Settings' }].map((item) => (
-                        <button key={item.id} onClick={() => handleNavClick(item.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group whitespace-nowrap overflow-hidden ${activeTab === item.id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'hover:bg-white/5 hover:text-white'}`}>
+                        <button key={item.id} onClick={() => handleNavClick(item.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group whitespace-nowrap overflow-hidden ${activeTab === item.id ? 'bg-[#16a34a] text-white shadow-lg shadow-green-900/20' : 'hover:bg-white/5 hover:text-white'}`}>
                             <item.icon size={22} className="flex-shrink-0" />
                             <span className={`font-medium overflow-hidden transition-all duration-300 ${(!sidebarOpen && window.innerWidth >= 768) ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'}`}>{item.label}</span>
                         </button>
