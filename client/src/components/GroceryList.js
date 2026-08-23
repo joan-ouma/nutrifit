@@ -172,13 +172,13 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
         <div className="max-w-4xl mx-auto animate-fadeIn">
             
             {/* HERO HEADER */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-8 rounded-3xl shadow-xl mb-8 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-8 rounded-3xl shadow-xl mb-8 text-white relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div>
                         <h2 className="text-3xl font-bold flex items-center gap-3">
-                            <ShoppingBag className="text-emerald-400" /> Smart Shopper
+                            <ShoppingBag className="text-emerald-200" /> Smart Shopper
                         </h2>
-                        <p className="text-slate-300 mt-2">
+                        <p className="text-emerald-100 mt-2">
                             {itemsToBuy.length} items remaining • {itemsInCart.length} in cart
                         </p>
                     </div>

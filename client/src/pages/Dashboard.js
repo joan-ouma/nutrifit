@@ -101,13 +101,13 @@ const OverviewTab = ({ user, setActiveTab, showToast, refreshUserData }) => {
     return (
         <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto w-full">
             {/* HERO HEADER */}
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
                         <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                            <LayoutDashboard className="text-cyan-200" /> Dashboard Overview
+                            <LayoutDashboard className="text-emerald-200" /> Dashboard Overview
                         </h2>
-                        <p className="text-blue-100">Track your daily progress and hit your goals.</p>
+                        <p className="text-emerald-100">Track your daily progress and hit your goals.</p>
                     </div>
                 
                 <div className="flex gap-4 w-full md:w-auto">
@@ -183,12 +183,12 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
         <div className="max-w-5xl mx-auto flex flex-col animate-fadeIn relative min-h-full">
             
             {/* HERO HEADER */}
-            <div className="bg-gradient-to-r from-fuchsia-600 to-purple-600 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden mx-6 mt-6">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden mx-6 mt-6">
                 <div className="relative z-10">
                     <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                        <ChefHat className="text-fuchsia-200" /> AI Recipe Assistant
+                        <ChefHat className="text-emerald-200" /> AI Recipe Assistant
                     </h2>
-                    <p className="text-fuchsia-100">Find and generate personalized recipes based on what's in your kitchen.</p>
+                    <p className="text-emerald-100">Find and generate personalized recipes based on what's in your kitchen.</p>
                 </div>
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             </div>
@@ -335,13 +335,13 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
         <div className="max-w-4xl mx-auto animate-fadeIn">
             
             {/* HERO HEADER */}
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
                         <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                            <ShoppingBag className="text-amber-100" /> Digital Pantry
+                            <ShoppingBag className="text-emerald-200" /> Digital Pantry
                         </h2>
-                        <p className="text-amber-100">Manage your inventory and track what you have.</p>
+                        <p className="text-emerald-100">Manage your inventory and track what you have.</p>
                     </div>
                     <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center gap-2 border border-white/20">
                         {isLoading ? <><Loader2 size={16} className="animate-spin" /><span>Syncing...</span></> : <><CheckCircle size={16} /><span>{pantry?.length || 0} Items</span></>}
@@ -560,7 +560,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="flex h-[100dvh] bg-slate-50 font-sans text-slate-900 overflow-hidden">
+        <div className="flex h-[100dvh] font-sans text-slate-900 overflow-hidden bg-transparent">
             {sidebarOpen && window.innerWidth < 768 && (
                 <div className="fixed inset-0 bg-black/60 z-30 backdrop-blur-sm transition-opacity" onClick={() => setSidebarOpen(false)}></div>
             )}
@@ -632,7 +632,7 @@ export default function Dashboard() {
                     </div>
                 </header>
 
-                <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-50/50 relative scroll-smooth flex flex-col pt-6">
+                <main ref={mainRef} className="flex-1 overflow-y-auto bg-transparent relative scroll-smooth flex flex-col pt-6">
                     <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 pb-12">
                         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
                         {renderContent()}
