@@ -55,7 +55,7 @@ export default function Landing() {
 
     // Scroll-spy: update active nav pill based on visible section
     useEffect(() => {
-        const ids = ['plans', 'meals', 'how-it-works', 'testimonials'];
+        const ids = ['hero', 'plans', 'how-it-works', 'testimonials'];
         const observers = [];
         ids.forEach(id => {
             const el = document.getElementById(id);
@@ -206,8 +206,8 @@ export default function Landing() {
                     </Link>
 
                     <div className="nav-links" id="nav-links">
+                        <a href="#hero" className={`nav-pill ${activeSection === 'hero' ? 'active' : ''}`}>Home</a>
                         <a href="#plans" className={`nav-pill ${activeSection === 'plans' ? 'active' : ''}`}>Plans</a>
-                        <a href="#meals" className={`nav-pill ${activeSection === 'meals' ? 'active' : ''}`}>Meals</a>
                         <a href="#how-it-works" className={`nav-pill ${activeSection === 'how-it-works' ? 'active' : ''}`}>How it Works</a>
                         <a href="#testimonials" className={`nav-pill ${activeSection === 'testimonials' ? 'active' : ''}`}>Nutritionists</a>
                     </div>
@@ -229,8 +229,8 @@ export default function Landing() {
 
                 {mobileMenuOpen && (
                     <div className="nav-mobile-menu animate-slideDown">
+                        <a href="#hero" onClick={() => setMobileMenuOpen(false)} className="mobile-link">Home</a>
                         <a href="#plans" onClick={() => setMobileMenuOpen(false)} className="mobile-link">Plans</a>
-                        <a href="#meals" onClick={() => setMobileMenuOpen(false)} className="mobile-link">Meals</a>
                         <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="mobile-link">How it Works</a>
                         <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="mobile-link">Nutritionists</a>
                         <div className="mobile-actions">
