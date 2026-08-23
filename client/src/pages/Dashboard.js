@@ -3,7 +3,7 @@ import {
     LayoutDashboard, ChefHat, ShoppingBag, User, LogOut, Search, Bell,
     Menu, X, Loader2, Flame, Camera, Save, Plus, Trash2, Sparkles,
     Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle, Droplet, Leaf,
-    Coffee, Apple, Salad, CupSoda, Milk
+    Coffee, Apple, Salad, CupSoda, Milk, Info
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -470,27 +470,47 @@ export default function Dashboard() {
                 <div className="fixed inset-0 bg-black/60 z-30 backdrop-blur-sm transition-opacity" onClick={() => setSidebarOpen(false)}></div>
             )}
 
-            <aside className={`fixed md:relative top-0 bottom-0 left-0 z-40 bg-slate-900 text-slate-300 shadow-2xl transition-all duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0 md:w-20'}`}>
-                <div className="h-24 flex items-center px-6 border-b border-slate-800/50 justify-between">
-                    <div className="flex items-center gap-3 text-white font-bold text-xl tracking-tight overflow-hidden whitespace-nowrap">
-                        <div className="bg-[#16a34a] p-2 rounded-xl shadow-lg shadow-green-900/50 flex-shrink-0"><Leaf className="text-white" size={24} /></div>
-                        <span className={`transition-all duration-300 overflow-hidden ${(!sidebarOpen && window.innerWidth >= 768) ? 'max-w-0 opacity-0' : 'max-w-[150px] opacity-100'}`}>NutriFit</span>
+            <aside className={`fixed md:relative top-0 bottom-0 left-0 z-40 bg-slate-50/50 border-r border-slate-200 transition-all duration-300 ease-in-out flex flex-col py-6 px-4 gap-6 ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0 md:w-[88px]'}`}>
+                {/* Logo Section */}
+                <div className={`flex items-center ${sidebarOpen ? 'justify-between px-2' : 'justify-center'}`}>
+                    <div className={`bg-white shadow-sm border border-slate-100 flex items-center p-1.5 transition-all duration-300 overflow-hidden ${sidebarOpen ? 'w-full gap-3 px-3 rounded-[24px]' : 'w-[56px] h-[56px] justify-center rounded-full mx-auto'}`}>
+                        <div className="bg-[#352846] p-2.5 rounded-full flex-shrink-0 flex items-center justify-center">
+                            <Leaf className="text-white" size={20} />
+                        </div>
+                        <span className={`font-bold text-slate-800 transition-all duration-300 whitespace-nowrap ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
+                            NutriFit
+                        </span>
                     </div>
-                    {window.innerWidth < 768 && <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>}
+                    {window.innerWidth < 768 && sidebarOpen && (
+                        <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-slate-700 ml-2 absolute right-6">
+                            <X size={24} />
+                        </button>
+                    )}
                 </div>
 
-                <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto custom-scrollbar">
-                    {[{ id: 'overview', icon: LayoutDashboard, label: 'Overview' }, { id: 'nutrition', icon: Activity, label: 'Nutrition' }, { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' }, { id: 'ai-chef', icon: ChefHat, label: 'AI Assistant' }, { id: 'grocery', icon: ListChecks, label: 'Grocery' }, { id: 'pantry', icon: ShoppingBag, label: 'My Pantry' }, { id: 'profile', icon: User, label: 'Settings' }].map((item) => (
-                        <button key={item.id} onClick={() => handleNavClick(item.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group whitespace-nowrap overflow-hidden ${activeTab === item.id ? 'bg-[#16a34a] text-white shadow-lg shadow-green-900/20' : 'hover:bg-white/5 hover:text-white'}`}>
-                            <item.icon size={22} className="flex-shrink-0" />
-                            <span className={`font-medium overflow-hidden transition-all duration-300 ${(!sidebarOpen && window.innerWidth >= 768) ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'}`}>{item.label}</span>
+                {/* Main Nav Items */}
+                <nav className={`flex-1 bg-white shadow-sm border border-slate-100 py-4 flex flex-col gap-3 overflow-y-auto custom-scrollbar transition-all duration-300 ${sidebarOpen ? 'rounded-[24px] px-4' : 'rounded-[40px] px-2 items-center w-[56px] mx-auto'}`}>
+                    {[{ id: 'overview', icon: LayoutDashboard, label: 'Overview' }, { id: 'nutrition', icon: Activity, label: 'Nutrition' }, { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' }, { id: 'ai-chef', icon: ChefHat, label: 'AI Assistant' }, { id: 'grocery', icon: ListChecks, label: 'Grocery' }, { id: 'pantry', icon: ShoppingBag, label: 'My Pantry' }].map((item) => (
+                        <button key={item.id} onClick={() => handleNavClick(item.id)} className={`flex items-center gap-3 p-3 rounded-full transition-all group whitespace-nowrap overflow-hidden ${sidebarOpen ? 'w-full px-4' : 'w-10 h-10 justify-center'} ${activeTab === item.id ? 'bg-[#352846] text-white shadow-md' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'}`}>
+                            <item.icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} className="flex-shrink-0" />
+                            <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>{item.label}</span>
                         </button>
                     ))}
                 </nav>
-                <div className="p-4 border-t border-slate-800/50">
-                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-colors whitespace-nowrap overflow-hidden">
-                        <LogOut size={22} className="flex-shrink-0" />
-                        <span className={`font-medium overflow-hidden transition-all duration-300 ${(!sidebarOpen && window.innerWidth >= 768) ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'}`}>Log Out</span>
+
+                {/* Bottom Nav Items */}
+                <div className={`bg-white shadow-sm border border-slate-100 py-4 flex flex-col gap-3 transition-all duration-300 ${sidebarOpen ? 'rounded-[24px] px-4' : 'rounded-[40px] px-2 items-center w-[56px] mx-auto'}`}>
+                    <button onClick={() => handleNavClick('profile')} className={`flex items-center gap-3 p-3 rounded-full transition-all group whitespace-nowrap overflow-hidden ${sidebarOpen ? 'w-full px-4' : 'w-10 h-10 justify-center'} ${activeTab === 'profile' ? 'bg-[#352846] text-white shadow-md' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'}`}>
+                        <User size={20} strokeWidth={activeTab === 'profile' ? 2.5 : 2} className="flex-shrink-0" />
+                        <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Settings</span>
+                    </button>
+                    <button className={`flex items-center gap-3 p-3 rounded-full transition-all group whitespace-nowrap overflow-hidden ${sidebarOpen ? 'w-full px-4' : 'w-10 h-10 justify-center'} text-slate-400 hover:bg-slate-50 hover:text-slate-900`}>
+                        <Info size={20} strokeWidth={2} className="flex-shrink-0" />
+                        <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Help</span>
+                    </button>
+                    <button onClick={handleLogout} className={`flex items-center gap-3 p-3 rounded-full transition-all group whitespace-nowrap overflow-hidden ${sidebarOpen ? 'w-full px-4' : 'w-10 h-10 justify-center'} text-slate-400 hover:bg-red-50 hover:text-red-500`}>
+                        <LogOut size={20} className="flex-shrink-0" />
+                        <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Log Out</span>
                     </button>
                 </div>
             </aside>
