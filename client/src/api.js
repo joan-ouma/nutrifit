@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const DEFAULT_LOCAL_URL = "http://localhost:5000/api";
-const DEFAULT_PROD_URL = "https://fitfork-api.onrender.com/api";
+const DEFAULT_PROD_URL = "https://nutrifit-3ue8.onrender.com/api";
 
 const getIsLocalHost = () => {
     if (typeof window === "undefined" || !window.location?.hostname) {
