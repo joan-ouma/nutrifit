@@ -100,13 +100,15 @@ const OverviewTab = ({ user, setActiveTab, showToast, refreshUserData }) => {
 
     return (
         <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto w-full">
-            <div className="bg-white border border-slate-200 rounded-xl p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-900 mb-1">
-                        Overview
-                    </h2>
-                    <p className="text-slate-500 text-sm">Track your daily progress and goals.</p>
-                </div>
+            {/* HERO HEADER */}
+            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden">
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                            <LayoutDashboard className="text-cyan-200" /> Dashboard Overview
+                        </h2>
+                        <p className="text-blue-100">Track your daily progress and hit your goals.</p>
+                    </div>
                 
                 <div className="flex gap-4 w-full md:w-auto">
                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg flex-1 min-w-[150px]">
@@ -177,10 +179,16 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
 
     return (
         <div className="max-w-5xl mx-auto flex flex-col animate-fadeIn relative min-h-full">
-            <div className="pt-6 px-6 pb-2">
-                {aiRecipes.length === 0 && !isGenerating && (
-                    <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900 mb-1">Recipe Search</h2><p className="text-slate-500 text-sm">Find recipes based on your ingredients and dietary preferences.</p></div>
-                )}
+            
+            {/* HERO HEADER */}
+            <div className="bg-gradient-to-r from-fuchsia-600 to-purple-600 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden mx-6 mt-6">
+                <div className="relative z-10">
+                    <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                        <ChefHat className="text-fuchsia-200" /> AI Recipe Assistant
+                    </h2>
+                    <p className="text-fuchsia-100">Find and generate personalized recipes based on what's in your kitchen.</p>
+                </div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             </div>
             <div className={`px-6 z-20 transition-all duration-500 ${aiRecipes.length > 0 ? 'sticky top-0 bg-slate-50/95 backdrop-blur-md pt-4 pb-4 border-b border-slate-200' : 'pb-6'}`}>
                 <div className="max-w-3xl mx-auto space-y-5">
@@ -304,13 +312,24 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
 
     return (
         <div className="max-w-4xl mx-auto animate-fadeIn">
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 mb-6 relative overflow-hidden">
-                <div className="flex justify-between items-start mb-6">
-                    <div><h2 className="text-2xl font-bold text-slate-900 mb-1">Digital Pantry</h2><p className="text-slate-500 text-sm">Manage your inventory.</p></div>
-                    <div className={`px-4 py-2 rounded-md flex items-center gap-2 font-semibold text-sm transition-all duration-300 ${isLoading ? 'bg-slate-100 text-slate-500' : 'bg-green-50 text-[#16a34a]'}`}>
-                        {isLoading ? <><Loader2 size={16} className="animate-spin" /><span>Syncing...</span></> : <><ShoppingBag size={18} /><span>{pantry?.length || 0} Items</span></>}
+            
+            {/* HERO HEADER */}
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden">
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                            <ShoppingBag className="text-amber-100" /> Digital Pantry
+                        </h2>
+                        <p className="text-amber-100">Manage your inventory and track what you have.</p>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center gap-2 border border-white/20">
+                        {isLoading ? <><Loader2 size={16} className="animate-spin" /><span>Syncing...</span></> : <><CheckCircle size={16} /><span>{pantry?.length || 0} Items</span></>}
                     </div>
                 </div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mb-6 relative overflow-hidden">
                 <div className="flex gap-3">
                     <div className="relative flex-1">
                         <input className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-[#16a34a] focus:border-[#16a34a] focus:bg-white transition-all text-sm font-medium text-slate-700" placeholder="Add item (e.g. Maize Flour)..." value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addItem()} />
