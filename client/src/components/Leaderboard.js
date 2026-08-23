@@ -52,13 +52,13 @@ export default function Leaderboard() {
         <div className="max-w-4xl mx-auto animate-fadeIn">
             
             {/* --- HEADER --- */}
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">
+            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-4">
                     <div>
                         <h2 className="text-3xl font-bold mb-1 flex items-center gap-3">
                             <Trophy className="text-yellow-300 fill-yellow-300" /> Leaderboard
                         </h2>
-                        <p className="text-emerald-100">
+                        <p className="text-violet-200">
                             Compete with {leaders.length > 0 ? leaders.length : 'other'} users today.
                         </p>
                     </div>
