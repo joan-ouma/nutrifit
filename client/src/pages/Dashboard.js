@@ -182,25 +182,50 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
                     <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900 mb-1">Recipe Search</h2><p className="text-slate-500 text-sm">Find recipes based on your ingredients and dietary preferences.</p></div>
                 )}
             </div>
-            <div className={`px-6 z-20 transition-all duration-500 ${aiRecipes.length > 0 ? 'sticky top-0 bg-slate-50/95 backdrop-blur-md pt-4 pb-4 border-b border-slate-200 shadow-sm' : 'pb-6'}`}>
-                <div className="max-w-3xl mx-auto space-y-4">
-                    <div className="relative flex items-center group">
-                        <div className="absolute left-4 text-slate-400 group-focus-within:text-[#16a34a] transition-colors"><ShoppingBag size={20} /></div>
-                        <input type="text" className="w-full py-3.5 pl-12 pr-32 bg-white rounded-lg border border-slate-200 shadow-sm focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a] outline-none font-medium text-sm text-slate-700 placeholder:text-slate-400 transition-all" placeholder="Enter ingredients (e.g. chicken, rice)..." value={pantryInput} onChange={(e) => setPantryInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateRecipes(preferences)} />
-                        <button onClick={() => handleGenerateRecipes(preferences)} disabled={isGenerating || !pantryInput.trim()} className="absolute right-2 top-2 bottom-2 bg-[#16a34a] text-white px-6 rounded-md font-semibold text-sm hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 transition-all">{isGenerating ? <Loader2 className="animate-spin" size={16} /> : "Search"}</button>
+            <div className={`px-6 z-20 transition-all duration-500 ${aiRecipes.length > 0 ? 'sticky top-0 bg-slate-50/95 backdrop-blur-md pt-4 pb-4 border-b border-slate-200' : 'pb-6'}`}>
+                <div className="max-w-3xl mx-auto space-y-5">
+                    <div className="relative flex items-center">
+                        <div className="absolute left-4 text-slate-400"><Search size={18} /></div>
+                        <input type="text" className="w-full py-3.5 pl-11 pr-28 bg-white rounded-lg border border-slate-200 shadow-sm focus:border-slate-400 focus:ring-1 focus:ring-slate-400 outline-none font-medium text-sm text-slate-900 placeholder:text-slate-400 transition-all" placeholder="e.g. chicken, rice" value={pantryInput} onChange={(e) => setPantryInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateRecipes(preferences)} />
+                        <button onClick={() => handleGenerateRecipes(preferences)} disabled={isGenerating || !pantryInput.trim()} className="absolute right-1.5 top-1.5 bottom-1.5 bg-[#16a34a] text-white px-6 rounded-md font-medium text-sm hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 transition-all">{isGenerating ? <Loader2 className="animate-spin" size={16} /> : "Search"}</button>
                     </div>
-                    <div className="flex flex-col gap-3">
-                        <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                            <div className="relative flex-shrink-0 group"><select value={preferences.cuisine} onChange={(e) => handlePreferenceChange('cuisine', e.target.value)} className="appearance-none bg-white pl-3 pr-8 py-2 rounded-md border border-slate-200 text-sm font-medium text-slate-700 outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a] cursor-pointer shadow-sm">{cuisines.map(c => <option key={c} value={c}>{c === 'any' ? 'Any Cuisine' : c}</option>)}</select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ArrowRight size={12} className="rotate-90" /></div></div>
-                            <div className="relative flex-shrink-0 group"><select value={preferences.mealType} onChange={(e) => handlePreferenceChange('mealType', e.target.value)} className="appearance-none bg-white pl-3 pr-8 py-2 rounded-md border border-slate-200 text-sm font-medium text-slate-700 outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a] cursor-pointer shadow-sm">{mealTypes.map(t => <option key={t} value={t} className="capitalize">{t === 'any' ? 'Any Meal' : t}</option>)}</select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ArrowRight size={12} className="rotate-90" /></div></div>
+                    <div className="flex flex-col gap-4">
+                        <div className="flex gap-2">
+                            <div className="relative group">
+                                <select value={preferences.cuisine} onChange={(e) => handlePreferenceChange('cuisine', e.target.value)} className="appearance-none bg-white pl-3 pr-8 py-2 rounded-md border border-slate-200 text-sm font-medium text-slate-600 outline-none hover:border-slate-300 shadow-sm cursor-pointer transition-colors">
+                                    {cuisines.map(c => <option key={c} value={c}>{c === 'any' ? 'Any Cuisine' : c}</option>)}
+                                </select>
+                                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ArrowRight size={10} className="rotate-90" /></div>
+                            </div>
+                            <div className="relative group">
+                                <select value={preferences.mealType} onChange={(e) => handlePreferenceChange('mealType', e.target.value)} className="appearance-none bg-white pl-3 pr-8 py-2 rounded-md border border-slate-200 text-sm font-medium text-slate-600 outline-none hover:border-slate-300 shadow-sm cursor-pointer transition-colors capitalize">
+                                    {mealTypes.map(t => <option key={t} value={t}>{t === 'any' ? 'Any Meal' : t}</option>)}
+                                </select>
+                                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ArrowRight size={10} className="rotate-90" /></div>
+                            </div>
                         </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar items-center"><span className="text-xs font-bold text-slate-400 uppercase tracking-wide flex-shrink-0 mr-1">Diet:</span>{dietaryOptions.map(option => (<button key={option} onClick={() => handlePreferenceChange('dietaryRestrictions', option)} className={`flex-shrink-0 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wide transition-all border shadow-sm ${preferences.dietaryRestrictions.includes(option) ? 'bg-[#16a34a] text-white border-[#16a34a]' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'}`}>{preferences.dietaryRestrictions.includes(option) && <Check size={10} className="inline mr-1 -mt-0.5" />} {option.replace('-', ' ')}</button>))}</div>
+                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar items-center">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex-shrink-0 mr-2">Diet:</span>
+                            {dietaryOptions.map(option => (
+                                <button key={option} onClick={() => handlePreferenceChange('dietaryRestrictions', option)} className={`flex-shrink-0 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all border shadow-sm ${preferences.dietaryRestrictions.includes(option) ? 'bg-white border-[#16a34a] text-[#16a34a]' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'}`}>
+                                    {option.replace('-', ' ')}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
             <div className="flex-1 px-6 pb-8 overflow-y-auto custom-scrollbar">
                 {isGenerating && <div className="flex flex-col items-center justify-center py-12"><Loader2 size={32} className="animate-spin text-[#16a34a] mb-4" /><h3 className="font-semibold text-slate-800">Searching recipes...</h3></div>}
-                {!isGenerating && aiRecipes.length > 0 && <div><div className="flex justify-between items-center mb-6"><h3 className="font-bold text-slate-900 text-lg">Results</h3><button onClick={() => setAiRecipes([])} className="text-sm font-semibold text-slate-500 hover:text-red-500 transition-colors">Clear Search</button></div><div className="grid md:grid-cols-2 gap-6">{aiRecipes.map((recipe, idx) => <RecipeCard key={idx} recipe={recipe} />)}</div></div>}
+                {!isGenerating && aiRecipes.length > 0 && <div>
+                    <div className="flex justify-between items-end mb-6 border-b border-slate-200 pb-2">
+                        <h3 className="font-bold text-slate-900 text-lg">Results</h3>
+                        <button onClick={() => setAiRecipes([])} className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors">Clear Search</button>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {aiRecipes.map((recipe, idx) => <RecipeCard key={idx} recipe={recipe} />)}
+                    </div>
+                </div>}
             </div>
         </div>
     );
