@@ -25,6 +25,10 @@ exports.generateGroceryList = async (req, res, next) => {
             }
         }
 
+        // Fetch user for pantry, goals, and history
+        const user = await User.findById(userId).populate('favoriteRecipes');
+        const userPantry = (user?.pantry || []).map(i => i.toLowerCase());
+
         // 1. Get ingredients from meal plan
         if (targetMealPlanId) {
             const mealPlan = await MealPlan.findOne({ _id: targetMealPlanId, userId });
@@ -69,23 +73,34 @@ exports.generateGroceryList = async (req, res, next) => {
             });
         }
 
+        // Convert ingredient map to array
         items = Object.values(ingredientMap).map(item => ({
             ...item,
             estimatedCost: estimateCost(item.name, item.category)
         }));
 
-        // 3. AI GENERATION IF NO ITEMS FOUND
+        // 3. AI GENERATION IF NO ITEMS FOUND (Or if everything was already in pantry)
         if (items.length === 0) {
-            const user = await User.findById(userId);
             const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
             
             if (genAI) {
                 const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+                
+                const favoriteMeals = user?.favoriteRecipes?.map(r => r.name).join(', ') || 'No specific history';
+                const currentPantryStr = user?.pantry?.join(', ') || 'Empty';
+                
                 const prompt = `
-                    Act as a professional nutritionist. The user's goal is ${user?.goals || 'balanced'} and their budget is ${user?.budgetLevel || 'medium'}. 
-                    They need a healthy weekly grocery list.
-                    Return a JSON array of 12 essential grocery items.
-                    Format exactly like this (no markdown, just raw JSON array):
+                    Act as a professional nutritionist and smart shopper. 
+                    The user's goal is ${user?.goals || 'balanced'}. 
+                    Their current pantry contains: [${currentPantryStr}].
+                    Their favorite meals/history: [${favoriteMeals}].
+                    
+                    Task: Generate a healthy weekly grocery list of exactly 12 items they should BUY.
+                    Focus on complementary items they need to finish making full meals based on what they already have.
+                    It is okay to suggest items they already have if they are staples they might need to restock.
+                    If their pantry is completely empty, suggest essential foundational staples based on their goals and history.
+                    
+                    Return ONLY a JSON array of objects. Format exactly like this:
                     [
                         { "name": "Item Name", "quantity": "amount (e.g., 2 lbs)", "category": "produce/meat/dairy/pantry/frozen/other" }
                     ]
