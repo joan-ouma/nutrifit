@@ -172,13 +172,17 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
         <div className="max-w-4xl mx-auto animate-fadeIn">
             
             {/* HERO HEADER */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-8 rounded-3xl shadow-xl mb-8 text-white relative overflow-hidden">
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div style={{ position: "relative", overflow: "hidden", backgroundColor: "#faf8f2" }} className="rounded-3xl p-8 shadow-sm mb-8 border border-slate-200">
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(20,184,166,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.08) 1px, transparent 1px)", backgroundSize: "48px 48px", mixBlendMode: "normal", opacity: 0.8, pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 45% at 48% 45%, rgba(45,212,191,0.22) 0%, transparent 75%)", mixBlendMode: "normal", filter: "blur(234px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 75% 25%, rgba(125,211,252,0.18) 0%, transparent 35%)", mixBlendMode: "normal", filter: "blur(180px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                
+                <div style={{ position: "relative", zIndex: 1 }} className="flex flex-col md:flex-row justify-between items-center gap-6">
                     <div>
-                        <h2 className="text-3xl font-bold flex items-center gap-3">
-                            <ShoppingBag className="text-emerald-400" /> Smart Shopper
+                        <h2 className="text-3xl font-bold flex items-center gap-3 text-slate-900">
+                            <ShoppingBag className="text-teal-600" /> Smart Shopper
                         </h2>
-                        <p className="text-slate-300 mt-2">
+                        <p className="text-slate-600 mt-2">
                             {itemsToBuy.length} items remaining • {itemsInCart.length} in cart
                         </p>
                     </div>
@@ -188,9 +192,9 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
                             <button
                                 onClick={handleGenerate}
                                 disabled={isGenerating}
-                                className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-5 py-3 rounded-xl font-bold hover:bg-white/20 transition-all flex items-center gap-2"
+                                className="bg-white/50 backdrop-blur-md border border-slate-200 text-slate-800 px-5 py-3 rounded-xl font-bold hover:bg-white/80 transition-all flex items-center gap-2"
                             >
-                                {isGenerating ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                                {isGenerating ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} className="text-teal-600" />}
                                 Auto-Plan
                             </button>
                         )}
@@ -198,7 +202,7 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
                             <button
                                 onClick={handleCheckout}
                                 disabled={isSaving}
-                                className="bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2"
+                                className="bg-teal-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-teal-500 transition-all shadow-lg shadow-teal-900/20 flex items-center gap-2"
                             >
                                 {isSaving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle size={18} />}
                                 Checkout
@@ -206,7 +210,6 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
                         )}
                     </div>
                 </div>
-                <div className="absolute right-0 bottom-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
             </div>
 
             {/* INPUT BAR */}

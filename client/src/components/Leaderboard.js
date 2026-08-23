@@ -52,23 +52,26 @@ export default function Leaderboard() {
         <div className="max-w-4xl mx-auto animate-fadeIn">
             
             {/* --- HEADER --- */}
-            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">
-                <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div style={{ position: "relative", overflow: "hidden", backgroundColor: "#faf8f2" }} className="rounded-3xl p-8 shadow-sm mb-8 border border-slate-200">
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(20,184,166,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.08) 1px, transparent 1px)", backgroundSize: "48px 48px", mixBlendMode: "normal", opacity: 0.8, pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 45% at 48% 45%, rgba(45,212,191,0.22) 0%, transparent 75%)", mixBlendMode: "normal", filter: "blur(234px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 75% 25%, rgba(125,211,252,0.18) 0%, transparent 35%)", mixBlendMode: "normal", filter: "blur(180px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                
+                <div style={{ position: "relative", zIndex: 1 }} className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                     <div>
-                        <h2 className="text-3xl font-bold mb-1 flex items-center gap-3">
-                            <Trophy className="text-yellow-300 fill-yellow-300" /> Leaderboard
+                        <h2 className="text-3xl font-bold mb-1 flex items-center gap-3 text-slate-900">
+                            <Trophy className="text-teal-600" /> Leaderboard
                         </h2>
-                        <p className="text-violet-200">
+                        <p className="text-slate-600">
                             Compete with {leaders.length > 0 ? leaders.length : 'other'} users today.
                         </p>
                     </div>
                     
                     {/* Privacy Badge */}
-                    <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-white/20">
-                        <Users size={14} /> Community Active
+                    <div className="bg-white/50 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-slate-200 text-slate-800">
+                        <Users size={14} className="text-teal-600" /> Community Active
                     </div>
                 </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             </div>
 
             {/* --- MY STATS CARD --- */}

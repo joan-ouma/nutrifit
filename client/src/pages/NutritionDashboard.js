@@ -127,40 +127,46 @@ export default function NutritionDashboard({ onMealLogged }) {
 
     return (
         <div className="space-y-6 animate-fadeIn">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-8 text-white shadow-xl">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h2 className="text-3xl font-bold mb-2">Nutrition Tracker</h2>
-                        <p className="text-emerald-100">Track your meals and reach your health goals</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <ExportButton />
-                        <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4">
-                            <Target size={32} />
+            {/* Header - Soft Mesh Aura */}
+            <div style={{ position: "relative", overflow: "hidden", backgroundColor: "#faf8f2" }} className="rounded-3xl p-8 shadow-sm border border-slate-200">
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(20,184,166,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.08) 1px, transparent 1px)", backgroundSize: "48px 48px", mixBlendMode: "normal", opacity: 0.8, pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 45% at 48% 45%, rgba(45,212,191,0.22) 0%, transparent 75%)", mixBlendMode: "normal", filter: "blur(234px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 75% 25%, rgba(125,211,252,0.18) 0%, transparent 35%)", mixBlendMode: "normal", filter: "blur(180px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                
+                <div style={{ position: "relative", zIndex: 1 }}>
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 className="text-3xl font-bold mb-2 text-slate-900">Nutrition Tracker</h2>
+                            <p className="text-slate-600">Track your meals and reach your health goals</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <ExportButton />
+                            <div className="bg-white/50 backdrop-blur-md rounded-2xl p-4 border border-slate-200 text-teal-600 shadow-sm">
+                                <Target size={32} />
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Date Selector */}
-                <div className="flex items-center justify-between bg-white/10 backdrop-blur-md rounded-2xl p-4">
-                    <button
-                        onClick={() => handleDateChange(-1)}
-                        className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
-                    <div className="flex items-center gap-3">
-                        <Calendar size={20} />
-                        <span className="font-medium">{formatDate(selectedDate)}</span>
+                    {/* Date Selector */}
+                    <div className="flex items-center justify-between bg-white/50 backdrop-blur-md rounded-2xl p-4 border border-slate-200 text-slate-800 shadow-sm">
+                        <button
+                            onClick={() => handleDateChange(-1)}
+                            className="p-2 hover:bg-white/80 rounded-xl transition-colors text-slate-600 hover:text-slate-900"
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+                        <div className="flex items-center gap-3">
+                            <Calendar size={20} className="text-teal-600" />
+                            <span className="font-medium">{formatDate(selectedDate)}</span>
+                        </div>
+                        <button
+                            onClick={() => handleDateChange(1)}
+                            disabled={selectedDate >= new Date().toISOString().split('T')[0]}
+                            className="p-2 hover:bg-white/80 rounded-xl transition-colors disabled:opacity-50 text-slate-600 hover:text-slate-900"
+                        >
+                            <ChevronRight size={20} />
+                        </button>
                     </div>
-                    <button
-                        onClick={() => handleDateChange(1)}
-                        disabled={selectedDate >= new Date().toISOString().split('T')[0]}
-                        className="p-2 hover:bg-white/20 rounded-xl transition-colors disabled:opacity-50"
-                    >
-                        <ChevronRight size={20} />
-                    </button>
                 </div>
             </div>
 

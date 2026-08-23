@@ -100,14 +100,18 @@ const OverviewTab = ({ user, setActiveTab, showToast, refreshUserData }) => {
 
     return (
         <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto w-full">
-            {/* HERO HEADER */}
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden">
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            {/* HERO HEADER - Soft Mesh Aura */}
+            <div style={{ position: "relative", overflow: "hidden", backgroundColor: "#faf8f2" }} className="rounded-3xl p-8 shadow-sm mb-8 border border-slate-200">
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(20,184,166,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.08) 1px, transparent 1px)", backgroundSize: "48px 48px", mixBlendMode: "normal", opacity: 0.8, pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 45% at 48% 45%, rgba(45,212,191,0.22) 0%, transparent 75%)", mixBlendMode: "normal", filter: "blur(234px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 75% 25%, rgba(125,211,252,0.18) 0%, transparent 35%)", mixBlendMode: "normal", filter: "blur(180px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                
+                <div style={{ position: "relative", zIndex: 1 }} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
-                        <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                            <LayoutDashboard className="text-cyan-200" /> Dashboard Overview
+                        <h2 className="text-3xl font-bold mb-2 flex items-center gap-3 text-slate-900">
+                            <LayoutDashboard className="text-teal-600" /> Dashboard Overview
                         </h2>
-                        <p className="text-blue-100">Track your daily progress and hit your goals.</p>
+                        <p className="text-slate-600">Track your daily progress and hit your goals.</p>
                     </div>
                 
                 <div className="flex gap-4 w-full md:w-auto">
@@ -122,7 +126,6 @@ const OverviewTab = ({ user, setActiveTab, showToast, refreshUserData }) => {
                     </div>
                 </div>
                 </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             </div>
 
             {/* DASHBOARD WIDGETS */}
@@ -182,15 +185,18 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
     return (
         <div className="max-w-5xl mx-auto flex flex-col animate-fadeIn relative min-h-full">
             
-            {/* HERO HEADER */}
-            <div className="bg-gradient-to-r from-fuchsia-600 to-purple-600 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden mx-6 mt-6">
-                <div className="relative z-10">
-                    <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                        <ChefHat className="text-fuchsia-200" /> AI Recipe Assistant
+            {/* HERO HEADER - Soft Mesh Aura */}
+            <div style={{ position: "relative", overflow: "hidden", backgroundColor: "#faf8f2" }} className="rounded-3xl p-8 shadow-sm mb-8 mx-6 mt-6 border border-slate-200">
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(20,184,166,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.08) 1px, transparent 1px)", backgroundSize: "48px 48px", mixBlendMode: "normal", opacity: 0.8, pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 45% at 48% 45%, rgba(45,212,191,0.22) 0%, transparent 75%)", mixBlendMode: "normal", filter: "blur(234px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 75% 25%, rgba(125,211,252,0.18) 0%, transparent 35%)", mixBlendMode: "normal", filter: "blur(180px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                
+                <div style={{ position: "relative", zIndex: 1 }}>
+                    <h2 className="text-3xl font-bold mb-2 flex items-center gap-3 text-slate-900">
+                        <ChefHat className="text-teal-600" /> AI Recipe Assistant
                     </h2>
-                    <p className="text-fuchsia-100">Find and generate personalized recipes based on what's in your kitchen.</p>
+                    <p className="text-slate-600">Find and generate personalized recipes based on what's in your kitchen.</p>
                 </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             </div>
             <div className={`px-6 z-20 transition-all duration-500 ${aiRecipes.length > 0 ? 'sticky top-0 bg-slate-50/95 backdrop-blur-md pt-4 pb-4 border-b border-slate-200' : 'pb-6'}`}>
                 <div className="max-w-3xl mx-auto space-y-5">
@@ -334,20 +340,23 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
     return (
         <div className="max-w-4xl mx-auto animate-fadeIn">
             
-            {/* HERO HEADER */}
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-3xl p-8 shadow-xl mb-8 text-white relative overflow-hidden">
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            {/* HERO HEADER - Soft Mesh Aura */}
+            <div style={{ position: "relative", overflow: "hidden", backgroundColor: "#faf8f2" }} className="rounded-3xl p-8 shadow-sm mb-8 border border-slate-200">
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(20,184,166,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.08) 1px, transparent 1px)", backgroundSize: "48px 48px", mixBlendMode: "normal", opacity: 0.8, pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 45% at 48% 45%, rgba(45,212,191,0.22) 0%, transparent 75%)", mixBlendMode: "normal", filter: "blur(234px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 75% 25%, rgba(125,211,252,0.18) 0%, transparent 35%)", mixBlendMode: "normal", filter: "blur(180px)", pointerEvents: "none", transform: "translateZ(0)" }} aria-hidden="true" />
+                
+                <div style={{ position: "relative", zIndex: 1 }} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
-                        <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                            <ShoppingBag className="text-amber-100" /> Digital Pantry
+                        <h2 className="text-3xl font-bold mb-2 flex items-center gap-3 text-slate-900">
+                            <ShoppingBag className="text-teal-600" /> Digital Pantry
                         </h2>
-                        <p className="text-amber-100">Manage your inventory and track what you have.</p>
+                        <p className="text-slate-600">Manage your inventory and track what you have.</p>
                     </div>
-                    <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center gap-2 border border-white/20">
-                        {isLoading ? <><Loader2 size={16} className="animate-spin" /><span>Syncing...</span></> : <><CheckCircle size={16} /><span>{pantry?.length || 0} Items</span></>}
+                    <div className="bg-white/50 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center gap-2 border border-slate-200 text-slate-800">
+                        {isLoading ? <><Loader2 size={16} className="animate-spin" /><span>Syncing...</span></> : <><CheckCircle size={16} className="text-teal-600" /><span>{pantry?.length || 0} Items</span></>}
                     </div>
                 </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             </div>
 
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mb-6 relative overflow-hidden">
@@ -560,7 +569,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="flex h-[100dvh] font-sans text-slate-900 overflow-hidden bg-transparent">
+        <div className="flex h-[100dvh] bg-slate-50 font-sans text-slate-900 overflow-hidden">
             {sidebarOpen && window.innerWidth < 768 && (
                 <div className="fixed inset-0 bg-black/60 z-30 backdrop-blur-sm transition-opacity" onClick={() => setSidebarOpen(false)}></div>
             )}
@@ -632,7 +641,7 @@ export default function Dashboard() {
                     </div>
                 </header>
 
-                <main ref={mainRef} className="flex-1 overflow-y-auto bg-transparent relative scroll-smooth flex flex-col pt-6">
+                <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-50/50 relative scroll-smooth flex flex-col pt-6">
                     <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 pb-12">
                         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
                         {renderContent()}
