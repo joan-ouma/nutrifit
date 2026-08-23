@@ -53,9 +53,7 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex flex-col bg-slate-50 relative overflow-hidden">
-            {/* Background decorative elements */}
-            <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-emerald-400/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/3"></div>
-            <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-amber-400/10 rounded-full blur-3xl translate-y-1/3 translate-x-1/3"></div>
+            {/* Removed AI Background Elements */}
 
             {/* Header */}
             <div className="relative z-10 px-6 pt-6">
@@ -66,11 +64,11 @@ export default function Login() {
             </div>
 
             <div className="flex-1 flex items-center justify-center px-6 py-12 relative z-10">
-                <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-xl shadow-sm border border-slate-200">
                     {/* Logo */}
                     <div className="mb-8">
                         <div className="flex items-center gap-2.5 mb-8">
-                            <div className="bg-[#16a34a] p-2 rounded-lg text-white shadow-md shadow-green-200">
+                            <div className="bg-[#16a34a] p-2 rounded-lg text-white">
                                 <Leaf size={20} />
                             </div>
                             <span className="font-bold text-2xl text-slate-900 tracking-tight">NutriFit</span>
@@ -127,7 +125,7 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-[#16a34a] text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-green-200"
+                            className="w-full bg-[#16a34a] text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isLoading ? (
                                 <>

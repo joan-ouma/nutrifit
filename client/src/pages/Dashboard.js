@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     LayoutDashboard, ChefHat, ShoppingBag, User, LogOut, Search, Bell,
     Menu, X, Loader2, Flame, Camera, Save, Plus, Trash2, Sparkles,
-    Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle, Droplet, Leaf
+    Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle, Droplet, Leaf,
+    Coffee, Apple, Salad, CupSoda, Milk
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -99,52 +100,60 @@ const OverviewTab = ({ user, setActiveTab, showToast, refreshUserData }) => {
 
     return (
         <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto w-full">
-            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="relative z-10">
-                    <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider text-xs mb-2">
-                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> Online & Tracking
-                    </div>
-                    <h2 className="text-3xl font-bold mb-2">
-                        Good {timeOfDay}, {user.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'User'}.
+            <div className="bg-white border border-slate-200 rounded-xl p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-1">
+                        Overview
                     </h2>
-                    <p className="text-slate-300 max-w-md mb-4">Consistency is key. You're on a roll with your <span className="text-white font-bold">{user.goals || 'balanced'}</span> journey.</p>
-                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 max-w-sm backdrop-blur-sm">
-                        <div className="flex justify-between text-xs text-slate-400 mb-2 font-medium"><span>Daily Fuel</span><span>{Math.round(todayStats.calories)} / {todayStats.goal} kcal</span></div>
-                        <div className="h-3 bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-1000 relative" style={{ width: `${fuelPercent}%` }}></div></div>
+                    <p className="text-slate-500 text-sm">Track your daily progress and goals.</p>
+                </div>
+                
+                <div className="flex gap-4 w-full md:w-auto">
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg flex-1 min-w-[150px]">
+                        <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Daily Fuel</div>
+                        <div className="text-xl font-bold text-slate-900 mb-2">{Math.round(todayStats.calories)} / {todayStats.goal} <span className="text-sm font-normal text-slate-500">kcal</span></div>
+                        <div className="h-2 bg-slate-200 rounded-full overflow-hidden"><div className="h-full bg-[#16a34a] transition-all" style={{ width: `${fuelPercent}%` }}></div></div>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg flex-1 min-w-[150px]">
+                        <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Day Streak</div>
+                        <div className="text-xl font-bold text-slate-900">{streakDays} <span className="text-sm font-normal text-slate-500">days</span></div>
                     </div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center gap-4 min-w-[180px] z-10 hover:bg-white/20 transition-colors cursor-default">
-                    <div className="bg-orange-500/20 p-3 rounded-xl text-orange-400"><Flame size={32} fill="currentColor" /></div>
-                    <div><div className="text-3xl font-bold">{streakDays}</div><div className="text-xs text-slate-300 font-medium uppercase tracking-wide">Day Streak</div></div>
-                </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
             </div>
 
-            {/* SMART ACTIONS GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div onClick={() => setActiveTab('ai-chef')} className="md:col-span-2 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center gap-6 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                    <div className="bg-emerald-100 p-4 rounded-full text-emerald-600 z-10"><ChefHat size={32} /></div>
-                    <div className="flex-1 text-center sm:text-left z-10">
-                        <h3 className="text-lg font-bold text-slate-900">Time for {nextMeal}?</h3>
-                        <p className="text-slate-500 text-sm mb-4">Let NutriFit Assistant check your pantry and suggest a perfect {user.goals} meal.</p>
-                        <span className="text-emerald-600 text-sm font-bold flex items-center gap-2 justify-center sm:justify-start group-hover:gap-3 transition-all">Generate {nextMeal} <ArrowRight size={16} /></span>
+            {/* DASHBOARD WIDGETS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div onClick={() => setActiveTab('ai-chef')} className="bg-white border border-slate-200 rounded-xl p-6 hover:border-[#16a34a] transition-colors cursor-pointer flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="bg-slate-50 p-3 rounded-lg text-slate-700 border border-slate-200"><ChefHat size={20} /></div>
+                            <ArrowRight size={18} className="text-slate-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">Meal Planner</h3>
+                        <p className="text-slate-500 text-sm">Find recipes based on your pantry and goals.</p>
                     </div>
                 </div>
-                <div onClick={() => setActiveTab('nutrition')} className="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-200 flex flex-col justify-between cursor-pointer hover:bg-blue-700 transition-colors relative overflow-hidden group">
-                    <div className="flex justify-between items-start z-10"><div><h3 className="font-bold text-lg">Hydration</h3><p className="text-blue-100 text-xs">Goal: {waterStats.goal}ml</p></div><Droplet size={20} className="text-blue-200" /></div>
-                    <div className="z-10 mt-4"><div className="flex items-end gap-2 mb-2"><span className="text-4xl font-bold">{waterStats.current}</span><span className="text-sm mb-1 opacity-80">ml</span></div><div className="w-full bg-black/10 h-2 rounded-full overflow-hidden"><div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${waterPercent}%` }}></div></div></div>
+                <div onClick={() => setActiveTab('nutrition')} className="bg-white border border-slate-200 rounded-xl p-6 hover:border-blue-500 transition-colors cursor-pointer flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="bg-slate-50 p-3 rounded-lg text-slate-700 border border-slate-200"><Droplet size={20} /></div>
+                            <ArrowRight size={18} className="text-slate-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-1">Hydration</h3>
+                        <div className="flex justify-between text-sm text-slate-500 font-medium mb-2"><span>{waterStats.current}ml</span><span>{waterStats.goal}ml</span></div>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div className="bg-blue-500 h-full rounded-full transition-all" style={{ width: `${waterPercent}%` }}></div></div>
+                    </div>
                 </div>
             </div>
 
             {/* QUICK ADD */}
             <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-4 px-2">Quick Add</h3>
-                <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar px-2">
-                    {[{ name: 'Water (250ml)', icon: '💧', cal: 0 }, { name: 'Coffee', icon: '☕', cal: 5 }, { name: 'Banana', icon: '🍌', cal: 105 }, { name: 'Apple', icon: '🍎', cal: 95 }, { name: 'Protein Shake', icon: '🥤', cal: 180 }, { name: 'Yogurt', icon: '🥣', cal: 120 }].map((item, idx) => (
-                        <button key={idx} onClick={() => handleQuickAdd(item)} disabled={addingItem !== null} className="flex-shrink-0 bg-white border border-slate-100 p-4 rounded-2xl min-w-[140px] hover:border-emerald-500 hover:shadow-md transition-all text-left group relative">
-                            {addingItem === item.name ? <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-2xl z-20"><Loader2 className="animate-spin text-emerald-600" size={24} /></div> : null}
-                            <span className="text-2xl mb-2 block group-hover:scale-110 transition-transform">{item.icon}</span><div className="font-bold text-slate-700 text-sm">{item.name}</div><div className="text-xs text-slate-400 font-medium group-hover:text-emerald-500">{item.cal} kcal</div>
+                <h3 className="text-base font-bold text-slate-900 mb-3 px-1">Quick Log</h3>
+                <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar px-1">
+                    {[{ name: 'Water (250ml)', icon: <Droplet size={24} className="text-blue-500" />, cal: 0 }, { name: 'Coffee', icon: <Coffee size={24} className="text-amber-700" />, cal: 5 }, { name: 'Fruit', icon: <Apple size={24} className="text-red-500" />, cal: 105 }, { name: 'Salad', icon: <Salad size={24} className="text-green-500" />, cal: 95 }, { name: 'Protein Shake', icon: <CupSoda size={24} className="text-indigo-500" />, cal: 180 }, { name: 'Yogurt', icon: <Milk size={24} className="text-slate-600" />, cal: 120 }].map((item, idx) => (
+                        <button key={idx} onClick={() => handleQuickAdd(item)} disabled={addingItem !== null} className="flex-shrink-0 bg-white border border-slate-200 p-3 rounded-lg min-w-[140px] hover:border-slate-300 transition-all text-left shadow-sm relative">
+                            {addingItem === item.name ? <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-lg z-20"><Loader2 className="animate-spin text-slate-600" size={20} /></div> : null}
+                            <span className="text-xl mb-2 block">{item.icon}</span><div className="font-semibold text-slate-900 text-sm">{item.name}</div><div className="text-xs text-slate-500">{item.cal} kcal</div>
                         </button>
                     ))}
                 </div>
@@ -168,31 +177,30 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
 
     return (
         <div className="max-w-5xl mx-auto flex flex-col animate-fadeIn relative min-h-full">
-            <div className="pt-6 px-6 pb-2 text-center">
-                <div className="inline-flex items-center gap-3 bg-white px-5 py-2 rounded-full shadow-sm border border-slate-200 mb-6"><div className="relative"><div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div></div><span className="text-xs font-bold text-slate-600 uppercase tracking-widest">NutriFit Assistant Online</span></div>
+            <div className="pt-6 px-6 pb-2">
                 {aiRecipes.length === 0 && !isGenerating && (
-                    <div className="max-w-xl mx-auto mb-6 animate-slideDown"><h2 className="text-3xl font-bold text-slate-900 mb-2">What are we cooking today?</h2><p className="text-slate-500">Tell me your ingredients, select your preferences, and I'll generate a chef-quality recipe for you.</p></div>
+                    <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900 mb-1">Recipe Search</h2><p className="text-slate-500 text-sm">Find recipes based on your ingredients and dietary preferences.</p></div>
                 )}
             </div>
             <div className={`px-6 z-20 transition-all duration-500 ${aiRecipes.length > 0 ? 'sticky top-0 bg-slate-50/95 backdrop-blur-md pt-4 pb-4 border-b border-slate-200 shadow-sm' : 'pb-6'}`}>
                 <div className="max-w-3xl mx-auto space-y-4">
                     <div className="relative flex items-center group">
-                        <div className="absolute left-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors"><ShoppingBag size={22} /></div>
-                        <input type="text" className="w-full py-4 pl-12 pr-36 bg-white rounded-2xl border border-slate-200 shadow-sm focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none font-medium text-lg text-slate-700 placeholder:text-slate-400 transition-all" placeholder="e.g. Maize flour, beef, sukuma wiki..." value={pantryInput} onChange={(e) => setPantryInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateRecipes(preferences)} />
-                        <button onClick={() => handleGenerateRecipes(preferences)} disabled={isGenerating || !pantryInput.trim()} className="absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-6 rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center gap-2 transition-all shadow-md active:scale-95">{isGenerating ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</button>
+                        <div className="absolute left-4 text-slate-400 group-focus-within:text-[#16a34a] transition-colors"><ShoppingBag size={20} /></div>
+                        <input type="text" className="w-full py-3.5 pl-12 pr-32 bg-white rounded-lg border border-slate-200 shadow-sm focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a] outline-none font-medium text-sm text-slate-700 placeholder:text-slate-400 transition-all" placeholder="Enter ingredients (e.g. chicken, rice)..." value={pantryInput} onChange={(e) => setPantryInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerateRecipes(preferences)} />
+                        <button onClick={() => handleGenerateRecipes(preferences)} disabled={isGenerating || !pantryInput.trim()} className="absolute right-2 top-2 bottom-2 bg-[#16a34a] text-white px-6 rounded-md font-semibold text-sm hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 transition-all">{isGenerating ? <Loader2 className="animate-spin" size={16} /> : "Search"}</button>
                     </div>
                     <div className="flex flex-col gap-3">
                         <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                            <div className="relative flex-shrink-0 group"><select value={preferences.cuisine} onChange={(e) => handlePreferenceChange('cuisine', e.target.value)} className="appearance-none bg-white pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 outline-none hover:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all shadow-sm">{cuisines.map(c => <option key={c} value={c}>{c === 'any' ? '🌍 Any Cuisine' : c}</option>)}</select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ArrowRight size={12} className="rotate-90" /></div></div>
-                            <div className="relative flex-shrink-0 group"><select value={preferences.mealType} onChange={(e) => handlePreferenceChange('mealType', e.target.value)} className="appearance-none bg-white pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 outline-none hover:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all shadow-sm">{mealTypes.map(t => <option key={t} value={t} className="capitalize">{t === 'any' ? '🍽️ Any Meal' : t}</option>)}</select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ArrowRight size={12} className="rotate-90" /></div></div>
+                            <div className="relative flex-shrink-0 group"><select value={preferences.cuisine} onChange={(e) => handlePreferenceChange('cuisine', e.target.value)} className="appearance-none bg-white pl-3 pr-8 py-2 rounded-md border border-slate-200 text-sm font-medium text-slate-700 outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a] cursor-pointer shadow-sm">{cuisines.map(c => <option key={c} value={c}>{c === 'any' ? 'Any Cuisine' : c}</option>)}</select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ArrowRight size={12} className="rotate-90" /></div></div>
+                            <div className="relative flex-shrink-0 group"><select value={preferences.mealType} onChange={(e) => handlePreferenceChange('mealType', e.target.value)} className="appearance-none bg-white pl-3 pr-8 py-2 rounded-md border border-slate-200 text-sm font-medium text-slate-700 outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a] cursor-pointer shadow-sm">{mealTypes.map(t => <option key={t} value={t} className="capitalize">{t === 'any' ? 'Any Meal' : t}</option>)}</select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ArrowRight size={12} className="rotate-90" /></div></div>
                         </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar items-center"><span className="text-xs font-bold text-slate-400 uppercase tracking-wide flex-shrink-0 mr-1">Diet:</span>{dietaryOptions.map(option => (<button key={option} onClick={() => handlePreferenceChange('dietaryRestrictions', option)} className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all border shadow-sm ${preferences.dietaryRestrictions.includes(option) ? 'bg-emerald-600 text-white border-emerald-600 scale-105' : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-400 hover:text-emerald-600'}`}>{preferences.dietaryRestrictions.includes(option) && <Check size={10} className="inline mr-1 -mt-0.5" />} {option.replace('-', ' ')}</button>))}</div>
+                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar items-center"><span className="text-xs font-bold text-slate-400 uppercase tracking-wide flex-shrink-0 mr-1">Diet:</span>{dietaryOptions.map(option => (<button key={option} onClick={() => handlePreferenceChange('dietaryRestrictions', option)} className={`flex-shrink-0 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wide transition-all border shadow-sm ${preferences.dietaryRestrictions.includes(option) ? 'bg-[#16a34a] text-white border-[#16a34a]' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'}`}>{preferences.dietaryRestrictions.includes(option) && <Check size={10} className="inline mr-1 -mt-0.5" />} {option.replace('-', ' ')}</button>))}</div>
                     </div>
                 </div>
             </div>
             <div className="flex-1 px-6 pb-8 overflow-y-auto custom-scrollbar">
-                {isGenerating && <div className="flex flex-col items-center justify-center py-12 animate-pulse"><div className="bg-white p-5 rounded-full shadow-xl mb-5 border border-emerald-100"><ChefHat size={40} className="text-emerald-600" /></div><h3 className="text-lg font-bold text-slate-800">Analyzing your ingredients...</h3><p className="text-slate-500 text-sm">Reviewing {preferences.cuisine !== 'any' ? preferences.cuisine : 'global'} recipes</p></div>}
-                {!isGenerating && aiRecipes.length > 0 && <div className="animate-slideUp"><div className="flex justify-between items-center mb-6"><h3 className="font-bold text-slate-700 flex items-center gap-2"><Sparkles size={18} className="text-emerald-500" /> Recommended for you</h3><button onClick={() => setAiRecipes([])} className="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wide">Clear Results</button></div><div className="grid md:grid-cols-2 gap-6">{aiRecipes.map((recipe, idx) => <RecipeCard key={idx} recipe={recipe} />)}</div></div>}
+                {isGenerating && <div className="flex flex-col items-center justify-center py-12"><Loader2 size={32} className="animate-spin text-[#16a34a] mb-4" /><h3 className="font-semibold text-slate-800">Searching recipes...</h3></div>}
+                {!isGenerating && aiRecipes.length > 0 && <div><div className="flex justify-between items-center mb-6"><h3 className="font-bold text-slate-900 text-lg">Results</h3><button onClick={() => setAiRecipes([])} className="text-sm font-semibold text-slate-500 hover:text-red-500 transition-colors">Clear Search</button></div><div className="grid md:grid-cols-2 gap-6">{aiRecipes.map((recipe, idx) => <RecipeCard key={idx} recipe={recipe} />)}</div></div>}
             </div>
         </div>
     );
@@ -249,44 +257,41 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
 
     return (
         <div className="max-w-4xl mx-auto animate-fadeIn">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 mb-6 relative overflow-hidden">
-                <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-6">
-                        <div><h2 className="text-2xl font-bold text-slate-900">My Digital Pantry</h2><p className="text-slate-500">Manage your inventory.</p></div>
-                        <div className={`px-4 py-2 rounded-xl flex items-center gap-2 font-bold text-sm transition-all duration-300 ${isLoading ? 'bg-slate-100 text-slate-500' : 'bg-emerald-100 text-emerald-800'}`}>
-                            {isLoading ? <><Loader2 size={16} className="animate-spin" /><span>Syncing...</span></> : <><ShoppingBag size={18} /><span>{pantry?.length || 0} Items</span></>}
-                        </div>
-                    </div>
-                    <div className="flex gap-3">
-                        <div className="relative flex-1">
-                            <input className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all font-medium" placeholder="Add item (e.g. Maize Flour)..." value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addItem()} />
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><Plus size={20} /></div>
-                        </div>
-                        <button onClick={addItem} disabled={!newItem.trim()} className="bg-slate-900 text-white px-8 rounded-2xl font-bold hover:bg-slate-800 transition-colors shadow-lg disabled:opacity-50">Add</button>
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 mb-6 relative overflow-hidden">
+                <div className="flex justify-between items-start mb-6">
+                    <div><h2 className="text-2xl font-bold text-slate-900 mb-1">Digital Pantry</h2><p className="text-slate-500 text-sm">Manage your inventory.</p></div>
+                    <div className={`px-4 py-2 rounded-md flex items-center gap-2 font-semibold text-sm transition-all duration-300 ${isLoading ? 'bg-slate-100 text-slate-500' : 'bg-green-50 text-[#16a34a]'}`}>
+                        {isLoading ? <><Loader2 size={16} className="animate-spin" /><span>Syncing...</span></> : <><ShoppingBag size={18} /><span>{pantry?.length || 0} Items</span></>}
                     </div>
                 </div>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -mr-8 -mt-8"></div>
+                <div className="flex gap-3">
+                    <div className="relative flex-1">
+                        <input className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-[#16a34a] focus:border-[#16a34a] focus:bg-white transition-all text-sm font-medium text-slate-700" placeholder="Add item (e.g. Maize Flour)..." value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addItem()} />
+                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"><Plus size={18} /></div>
+                    </div>
+                    <button onClick={addItem} disabled={!newItem.trim()} className="bg-[#16a34a] text-white px-6 rounded-lg font-semibold text-sm hover:bg-green-700 transition-colors disabled:opacity-50">Add</button>
+                </div>
             </div>
             {selectedItems.length > 0 && (
-                <div className="sticky top-4 z-20 mb-6 animate-slideDown">
-                    <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-xl flex justify-between items-center mx-auto max-w-lg">
-                        <span className="font-bold ml-2">{selectedItems.length} Selected</span>
+                <div className="sticky top-4 z-20 mb-6">
+                    <div className="bg-white border border-slate-200 p-4 rounded-lg shadow-md flex justify-between items-center mx-auto max-w-lg">
+                        <span className="font-semibold text-slate-900 ml-2">{selectedItems.length} Selected</span>
                         <div className="flex gap-2">
-                            <button onClick={deleteSelected} className="px-4 py-2 bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2"><Trash2 size={16} /> Remove</button>
-                            <button onClick={cookSelected} className="px-6 py-2 bg-emerald-500 text-white hover:bg-emerald-400 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg"><ChefHat size={16} /> Plan Meal</button>
+                            <button onClick={deleteSelected} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md text-sm font-medium transition-all flex items-center gap-2 border border-slate-200"><Trash2 size={16} /> Remove</button>
+                            <button onClick={cookSelected} className="px-4 py-2 bg-[#16a34a] text-white hover:bg-green-700 rounded-md text-sm font-semibold transition-all flex items-center gap-2"><Search size={16} /> Find Recipes</button>
                         </div>
                     </div>
                 </div>
             )}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                {isLoading && (!pantry || pantry.length === 0) ? <div className="text-center py-20 text-slate-400">Loading inventory...</div> : (!pantry || pantry.length === 0) ? <div className="text-center py-20 text-slate-400">Your pantry is empty. Add items or shop from Grocery list.</div> : (
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                {isLoading && (!pantry || pantry.length === 0) ? <div className="text-center py-20 text-slate-400 text-sm">Loading inventory...</div> : (!pantry || pantry.length === 0) ? <div className="text-center py-20 text-slate-400 text-sm">Your pantry is empty. Add items or shop from Grocery list.</div> : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {pantry.map((item, idx) => {
                             const isSelected = selectedItems.includes(item);
                             return (
-                                <div key={idx} onClick={() => toggleSelection(item)} className={`cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between group ${isSelected ? 'bg-emerald-50 border-emerald-500 shadow-md ring-1 ring-emerald-500' : 'bg-slate-50 border-slate-200 hover:border-emerald-300'}`}>
-                                    <span className={`font-bold capitalize truncate pr-2 ${isSelected ? 'text-emerald-900' : 'text-slate-700'}`}>{item}</span>
-                                    {isSelected && <CheckCircle size={18} className="text-emerald-600 flex-shrink-0" />}
+                                <div key={idx} onClick={() => toggleSelection(item)} className={`cursor-pointer p-4 rounded-lg border transition-all flex items-center justify-between group ${isSelected ? 'bg-green-50 border-[#16a34a] ring-1 ring-[#16a34a]' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}>
+                                    <span className={`font-semibold text-sm capitalize truncate pr-2 ${isSelected ? 'text-green-900' : 'text-slate-700'}`}>{item}</span>
+                                    {isSelected && <CheckCircle size={18} className="text-[#16a34a] flex-shrink-0" />}
                                 </div>
                             );
                         })}
@@ -303,8 +308,8 @@ const ProfileTab = ({ user, handleUpdateProfile, handleImageUpload }) => {
     useEffect(() => { setEditForm({ ...user }); }, [user]);
 
     return (
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-100 animate-fadeIn">
-            <div className="flex justify-between items-center mb-8"><h2 className="text-2xl font-bold text-slate-900">Edit Profile</h2><button onClick={() => handleUpdateProfile(editForm)} className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"><Save size={18} /> Save Changes</button></div>
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex justify-between items-center mb-8"><h2 className="text-2xl font-bold text-slate-900">Edit Profile</h2><button onClick={() => handleUpdateProfile(editForm)} className="flex items-center gap-2 bg-[#16a34a] text-white px-6 py-2 rounded-lg font-semibold text-sm hover:bg-green-700 transition-all"><Save size={16} /> Save Changes</button></div>
             <div className="flex flex-col items-center mb-8 pb-8 border-b border-slate-100">
                 <div className="relative mb-4">
                     <div className="w-32 h-32 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 border-4 border-white shadow-xl overflow-hidden">{editForm.profileImage ? <img src={editForm.profileImage} alt="Profile" className="w-full h-full object-cover" /> : <User size={48} />}</div>
@@ -315,10 +320,10 @@ const ProfileTab = ({ user, handleUpdateProfile, handleImageUpload }) => {
                 <p className="text-slate-500">{editForm.email}</p>
             </div>
             <div className="space-y-6">
-                <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Bio</label><textarea className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 outline-none" rows="3" value={editForm.bio || ''} onChange={e => setEditForm({ ...editForm, bio: e.target.value })}></textarea></div>
+                <div><label className="block text-xs font-semibold text-slate-500 uppercase mb-2">Bio</label><textarea className="w-full p-4 rounded-lg border border-slate-200 bg-slate-50 outline-none focus:ring-1 focus:ring-[#16a34a] focus:border-[#16a34a]" rows="3" value={editForm.bio || ''} onChange={e => setEditForm({ ...editForm, bio: e.target.value })}></textarea></div>
                 <div className="grid grid-cols-2 gap-6">
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Goal</label><select value={editForm.goals || 'balanced'} onChange={e => setEditForm({ ...editForm, goals: e.target.value })} className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 outline-none"><option value="balanced">Balanced Diet</option><option value="weight-loss">Weight Loss</option><option value="muscle">Muscle Gain</option></select></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Calorie Goal</label><input type="number" value={editForm.calorieGoal || 2000} onChange={e => setEditForm({ ...editForm, calorieGoal: parseInt(e.target.value) || 2000 })} className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 outline-none" /></div>
+                    <div><label className="block text-xs font-semibold text-slate-500 uppercase mb-2">Goal</label><select value={editForm.goals || 'balanced'} onChange={e => setEditForm({ ...editForm, goals: e.target.value })} className="w-full p-3 rounded-lg border border-slate-200 bg-slate-50 outline-none focus:ring-1 focus:ring-[#16a34a] focus:border-[#16a34a]"><option value="balanced">Balanced Diet</option><option value="weight-loss">Weight Loss</option><option value="muscle">Muscle Gain</option></select></div>
+                    <div><label className="block text-xs font-semibold text-slate-500 uppercase mb-2">Calorie Goal</label><input type="number" value={editForm.calorieGoal || 2000} onChange={e => setEditForm({ ...editForm, calorieGoal: parseInt(e.target.value) || 2000 })} className="w-full p-3 rounded-lg border border-slate-200 bg-slate-50 outline-none focus:ring-1 focus:ring-[#16a34a] focus:border-[#16a34a]" /></div>
                 </div>
             </div>
         </div>
