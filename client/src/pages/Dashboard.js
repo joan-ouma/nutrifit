@@ -3,7 +3,7 @@ import {
     LayoutDashboard, ChefHat, ShoppingBag, User, LogOut, Search, Bell,
     Menu, X, Loader2, Flame, Camera, Save, Plus, Trash2, Sparkles,
     Activity, ListChecks, Trophy, Check, ArrowRight, CheckCircle, Droplet, Leaf,
-    Coffee, Apple, Salad, CupSoda, Milk, Info
+    Coffee, Apple, Salad, CupSoda, Milk, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -504,9 +504,9 @@ export default function Dashboard() {
                         <User size={20} strokeWidth={activeTab === 'profile' ? 2.5 : 2} className="flex-shrink-0" />
                         <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Settings</span>
                     </button>
-                    <button className={`flex items-center gap-3 p-3 rounded-full transition-all group whitespace-nowrap overflow-hidden ${sidebarOpen ? 'w-full px-4' : 'w-10 h-10 justify-center'} text-slate-400 hover:bg-slate-50 hover:text-slate-900`}>
-                        <Info size={20} strokeWidth={2} className="flex-shrink-0" />
-                        <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Help</span>
+                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className={`hidden md:flex items-center gap-3 p-3 rounded-full transition-all group whitespace-nowrap overflow-hidden ${sidebarOpen ? 'w-full px-4' : 'w-10 h-10 justify-center'} text-slate-400 hover:bg-slate-50 hover:text-slate-900`}>
+                        {sidebarOpen ? <ChevronLeft size={20} strokeWidth={2} className="flex-shrink-0" /> : <ChevronRight size={20} strokeWidth={2} className="flex-shrink-0" />}
+                        <span className={`font-medium transition-all duration-300 ${!sidebarOpen ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Collapse</span>
                     </button>
                     <button onClick={handleLogout} className={`flex items-center gap-3 p-3 rounded-full transition-all group whitespace-nowrap overflow-hidden ${sidebarOpen ? 'w-full px-4' : 'w-10 h-10 justify-center'} text-slate-400 hover:bg-red-50 hover:text-red-500`}>
                         <LogOut size={20} className="flex-shrink-0" />
