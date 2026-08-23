@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
         required: true,
         minlength: 6
     },
-    pantry: [String],
+    pantry: { type: Array, default: [] },
     goals: { 
         type: String, 
         enum: ['balanced', 'weight-loss', 'muscle'],

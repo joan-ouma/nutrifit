@@ -263,6 +263,7 @@ const AIChefTab = ({ pantryInput, setPantryInput, handleGenerateRecipes, isGener
 
 const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab, setPantryInput }) => {
     const [newItem, setNewItem] = useState('');
+    const [newQuantity, setNewQuantity] = useState(1);
     const [selectedItems, setSelectedItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -283,11 +284,29 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
 
     const addItem = () => {
         if (!newItem.trim()) return;
-        if (pantry.includes(newItem.trim())) { setNewItem(''); return; }
-        const updatedPantry = [newItem.trim(), ...(pantry || [])];
+        
+        const itemName = newItem.trim();
+        let updatedPantry = [...(pantry || [])];
+        
+        // Find if item already exists (either as string or object)
+        const existingIndex = updatedPantry.findIndex(i => 
+            (typeof i === 'string' ? i.toLowerCase() : i.name.toLowerCase()) === itemName.toLowerCase()
+        );
+
+        if (existingIndex >= 0) {
+            // Update quantity of existing item
+            const existing = updatedPantry[existingIndex];
+            const currentQty = typeof existing === 'string' ? 1 : (existing.quantity || 1);
+            updatedPantry[existingIndex] = { name: itemName, quantity: currentQty + Number(newQuantity) };
+        } else {
+            // Add new item
+            updatedPantry = [{ name: itemName, quantity: Number(newQuantity) }, ...updatedPantry];
+        }
+
         setPantry(updatedPantry);
         handleUpdateProfile({ ...user, pantry: updatedPantry }, false);
         setNewItem('');
+        setNewQuantity(1);
     };
 
     const toggleSelection = (item) => {
@@ -305,7 +324,7 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
     };
 
     const cookSelected = () => {
-        const ingredients = selectedItems.join(', ');
+        const ingredients = selectedItems.map(i => typeof i === 'string' ? i : i.name).join(', ');
         setPantryInput(ingredients);
         setActiveTab('ai-chef');
     };
@@ -332,10 +351,13 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mb-6 relative overflow-hidden">
                 <div className="flex gap-3">
                     <div className="relative flex-1">
-                        <input className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-[#16a34a] focus:border-[#16a34a] focus:bg-white transition-all text-sm font-medium text-slate-700" placeholder="Add item (e.g. Maize Flour)..." value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addItem()} />
+                        <input className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 focus:bg-white transition-all text-sm font-medium text-slate-700" placeholder="Add item (e.g. Maize Flour)..." value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addItem()} />
                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"><Plus size={18} /></div>
                     </div>
-                    <button onClick={addItem} disabled={!newItem.trim()} className="bg-[#16a34a] text-white px-6 rounded-lg font-semibold text-sm hover:bg-green-700 transition-colors disabled:opacity-50">Add</button>
+                    <div className="w-24">
+                        <input type="number" min="1" className="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all text-sm font-medium text-slate-700 text-center" value={newQuantity} onChange={(e) => setNewQuantity(e.target.value)} />
+                    </div>
+                    <button onClick={addItem} disabled={!newItem.trim()} className="bg-amber-500 text-white px-6 rounded-lg font-semibold text-sm hover:bg-amber-600 transition-colors disabled:opacity-50">Add</button>
                 </div>
             </div>
             {selectedItems.length > 0 && (
@@ -354,10 +376,15 @@ const PantryTab = ({ pantry, setPantry, handleUpdateProfile, user, setActiveTab,
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {pantry.map((item, idx) => {
                             const isSelected = selectedItems.includes(item);
+                            const itemName = typeof item === 'string' ? item : item.name;
+                            const itemQty = typeof item === 'string' ? 1 : (item.quantity || 1);
                             return (
-                                <div key={idx} onClick={() => toggleSelection(item)} className={`cursor-pointer p-4 rounded-lg border transition-all flex items-center justify-between group ${isSelected ? 'bg-green-50 border-[#16a34a] ring-1 ring-[#16a34a]' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}>
-                                    <span className={`font-semibold text-sm capitalize truncate pr-2 ${isSelected ? 'text-green-900' : 'text-slate-700'}`}>{item}</span>
-                                    {isSelected && <CheckCircle size={18} className="text-[#16a34a] flex-shrink-0" />}
+                                <div key={idx} onClick={() => toggleSelection(item)} className={`cursor-pointer p-4 rounded-lg border transition-all flex items-center justify-between group ${isSelected ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}>
+                                    <div className="flex flex-col overflow-hidden">
+                                        <span className={`font-semibold text-sm capitalize truncate pr-2 ${isSelected ? 'text-amber-900' : 'text-slate-700'}`}>{itemName}</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Qty: {itemQty}</span>
+                                    </div>
+                                    {isSelected && <CheckCircle size={18} className="text-amber-500 flex-shrink-0" />}
                                 </div>
                             );
                         })}

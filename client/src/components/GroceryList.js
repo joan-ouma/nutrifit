@@ -116,9 +116,22 @@ export default function GroceryList({ recipeIds, mealPlanId, user, handleUpdateP
                 
                 const currentPantry = userRes.data.data.pantry || [];
                 
-                // 2. Add new items (Merge & Deduplicate)
-                const newItems = boughtItems.map(i => i.name);
-                const updatedPantry = [...new Set([...currentPantry, ...newItems])];
+                // 2. Add new items (Merge & Deduplicate quantities)
+                let updatedPantry = [...currentPantry];
+                
+                boughtItems.forEach(boughtItem => {
+                    const existingIndex = updatedPantry.findIndex(p => 
+                        (typeof p === 'string' ? p.toLowerCase() : p.name.toLowerCase()) === boughtItem.name.toLowerCase()
+                    );
+                    
+                    if (existingIndex >= 0) {
+                        const existing = updatedPantry[existingIndex];
+                        const currentQty = typeof existing === 'string' ? 1 : (existing.quantity || 1);
+                        updatedPantry[existingIndex] = { name: boughtItem.name, quantity: currentQty + boughtItem.quantity };
+                    } else {
+                        updatedPantry.push({ name: boughtItem.name, quantity: boughtItem.quantity });
+                    }
+                });
 
                 // 3. Send ONLY the pantry update
                 await axios.post(`${API_URL}/user/profile`, 
